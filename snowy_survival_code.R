@@ -3,6 +3,8 @@
 ##September 8, 2017
 
 source("kfdnm_sim_group.R") ## get function from kfdnm source code. see file for credit
+source("kfdnm_package_code.R")
+source("RcppExports.R")
 
 # num_kf Target numer of known-fate individuals in the group
 # num_years Number of years for the study
@@ -14,3 +16,11 @@ source("kfdnm_sim_group.R") ## get function from kfdnm source code. see file for
 # perfect_survey_rate The probability that all non-kf individuals are observed in a survey.
 # detection The detection probability for abundance surveys.
 sim.dat<-sim_data(num_kf = 3, num_years = 10, num_surveys = 3, recruit_rate = .5, init_rate = 30, survival_dnm = .25, survival_kf = .25, perfect_survey_rate = .2, detection = .6)
+
+##make likelihood function
+kfdnm_lik<-make_ikfdnm_likelihood(kf_data = sim.dat$kf_data, dnm_data = sim.dat$dnm_data)
+
+##
+kfdnm.samp<-make_ikfdnm_sampler()
+
+##could alternatively use two separate approaches (tagged versus not tagged) and compare the resulting parameter estimates
