@@ -2,9 +2,9 @@
 ##M tarjan
 ##September 8, 2017
 
-##
+##install required package
 #install.packages("devtools")
-library(devtools) ##required to install packages from github
+#library(devtools) ##required to install packages from github
 
 #devtools::install_github('kfdnm','NMML')
 library(kfdnm)
@@ -26,4 +26,3 @@ kfdnm_lik<-make_ikfdnm_likelihood(kf_data = sim.dat$kf_data, dnm_data = sim.dat$
 ##
 kfdnm.samp<-make_ikfdnm_sampler()
 
-##could alternatively use two separate approaches (tagged versus not tagged) and compare the resulting parameter estimates
