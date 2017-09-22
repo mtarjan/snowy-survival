@@ -9,6 +9,10 @@
 #devtools::install_github('kfdnm','NMML')
 library(kfdnm)
 
+library(dplyr) ##required for groupby
+
+library(ggplot2)
+
 ##SIMULATE DATA
 # num_kf Target numer of known-fate individuals in the group
 # num_years Number of years for the study
@@ -19,7 +23,7 @@ library(kfdnm)
 # survival_kf Survival rate for KF individuals.
 # perfect_survey_rate The probability that all non-kf individuals are observed in a survey.
 # detection The detection probability for abundance surveys.
-sim.dat<-sim_data(num_kf = 5, num_years = 10, num_surveys = 8, recruit_rate = 5, init_rate = 15, survival_dnm = .90, survival_kf = .90, perfect_survey_rate = .3, detection = .7)
+sim.dat<-sim_data(num_kf = 5, num_years = 27, num_surveys = 10, recruit_rate = 5, init_rate = 15, survival_dnm = .90, survival_kf = .90, perfect_survey_rate = .3, detection = .7)
 
 kf_data<-sim.dat$kf_data
 dnm_data<-sim.dat$dnm_data
@@ -43,24 +47,56 @@ dnm_data<-sim.dat$dnm_data
 library(RODBC)
 
 ##known fate individuals
-wb<-"S:/Science/Banding Database/SFBBO Banding Database.accdb"
-con<-odbcConnectAccess2007(wb) ##open connection to database
+#wb<-"S:/Science/Banding Database/SFBBO Banding Database.accdb" ##file path for use when connected to SFBBO server
+#wb<- "C:/Users/max/Desktop/Tarjan/Science/Plover/SFBBO Banding Database copy 22Sep2017.accdb" #filepath for work locally on Birds25
+#con<-odbcConnectAccess2007(wb) ##open connection to database
 
-qry<-"SELECT * FROM Plover"
+#qry<-"SELECT * FROM Plover"
 
-kf.dat<-sqlQuery(con, qry); head(kf.dat) ##import the queried table
+#kf.dat<-sqlQuery(con, qry); head(kf.dat) ##import the queried table
 
 ##unknown fate individuals
-wb<-"S:/Science/Waterbird/Databases - enter data here!/SNPL/SNPL.accdb"
+#wb<-"S:/Science/Waterbird/Databases - enter data here!/SNPL/SNPL.accdb"  ##file path for use when connected to SFBBO server
+wb<- "C:/Users/max/Desktop/Tarjan/Science/Plover/SNPL copy 22Sep2017.accdb" #filepath for work locally on Birds25
 con<-odbcConnectAccess2007(wb) ##open connection to database
 
-qry<-"SELECT * FROM Plover"
+qry<-"SELECT year(i.Date) AS year, i.Date, s.SurveyID AS survey, 0 AS perfect_survey, 0 AS R, s.TotalObserved AS n, p.Complex AS [group]
+  FROM ([SNPL SURVEY] AS s
+  LEFT OUTER JOIN [SNPL Observers Info] AS i ON s.SurveyID = i.SurveyID)
+  LEFT OUTER JOIN LookupPond AS p ON s.PondNumber = p.PondNumber
+  WHERE p.Complex <> 'Error With Record' "
 
 uf.dat<-sqlQuery(con, qry); head(uf.dat) ##import the queried table
 
 ##when finished with db, close the connection
 odbcCloseAll()
 
+##get summary n for a given date and location
+uf.dat.sum<-uf.dat %>% group_by(survey, group) %>% mutate(survey.n=sum(n)) %>% data.frame()
+##order by group, then time
+uf.dat.sum<-uf.dat.sum[order(uf.dat.sum$group, uf.dat.sum$year, uf.dat.sum$survey),]; head(uf.dat.sum)
+##remove n and remove duplicates; rename survey.n to n
+uf.dat.sum<-subset(uf.dat.sum, select = -n); uf.dat.sum<-unique(uf.dat.sum)
+names(uf.dat.sum)[length(uf.dat.sum)]<-"n"
+head(uf.dat.sum)
+
+##clean up data
+##remove nonsensical year
+uf.dat.sum<-subset(uf.dat.sum, year > 1980)
+
+dnm_data<-subset(uf.dat.sum, group == "Eden Landing")
+
+##visualize the data
+vis <- ggplot(data = dnm_data, aes(x = Date, y = n))
+vis <- vis + geom_point()
+#vis <- vis + facet_grid(facets = dnm_data$group~., scales = "free_y")
+vis
+
+##create complimentary temp data for kf.indiv
+sim.dat<-sim_data(num_kf = 5, num_years = max(dnm_data$year)-min(dnm_data$year), num_surveys = round(mean(table(dnm_data$year)),0), recruit_rate = 5, init_rate = 15, survival_dnm = .90, survival_kf = .90, perfect_survey_rate = .1, detection = .7)
+
+kf_data<-sim.dat$kf_data
+dnm_data<-sim.dat$dnm_data
 
 ###
 ### Create list of fixed parameters
@@ -74,7 +110,7 @@ fixed_list = list(
 ###
 ### Make likelihood function
 ### 
-lik.func <- make_ikfdnm_likelihood(survival=~1, recruit=~1, detection=~1, kf_survival_effects=NULL, fixed_list=fixed_list, kf_data=kf_data, dnm_data=dnm_data, N_max=50)
+lik.func <- make_ikfdnm_likelihood(survival=~1, recruit=~1, detection=~1, kf_survival_effects=NULL, fixed_list=fixed_list, kf_data=kf_data, dnm_data=dnm_data, N_max=400)
 
 ###
 ### Optimize and obtain estimates and variance-covariance matrix
