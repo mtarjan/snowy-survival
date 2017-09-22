@@ -2,9 +2,12 @@
 ##M tarjan
 ##September 8, 2017
 
-source("kfdnm_sim_group.R") ## get function from kfdnm source code. see file for credit
-source("kfdnm_package_code.R")
-source("RcppExports.R")
+##
+#install.packages("devtools")
+library(devtools) ##required to install packages from github
+
+#devtools::install_github('kfdnm','NMML')
+library(kfdnm)
 
 # num_kf Target numer of known-fate individuals in the group
 # num_years Number of years for the study
