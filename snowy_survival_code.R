@@ -40,7 +40,26 @@ dnm_data<-sim.dat$dnm_data
   ##only actually requires group, n, R for analysis. other variables were used to generate these values in the example
 
 ###load SNPL data from database
+library(RODBC)
 
+##known fate individuals
+wb<-"S:/Science/Banding Database/SFBBO Banding Database.accdb"
+con<-odbcConnectAccess2007(wb) ##open connection to database
+
+qry<-"SELECT * FROM Plover"
+
+kf.dat<-sqlQuery(con, qry); head(kf.dat) ##import the queried table
+
+##unknown fate individuals
+wb<-"S:/Science/Waterbird/Databases - enter data here!/SNPL/SNPL.accdb"
+con<-odbcConnectAccess2007(wb) ##open connection to database
+
+qry<-"SELECT * FROM Plover"
+
+uf.dat<-sqlQuery(con, qry); head(uf.dat) ##import the queried table
+
+##when finished with db, close the connection
+odbcCloseAll()
 
 
 ###
