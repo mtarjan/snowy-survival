@@ -1,17 +1,21 @@
 ##snovery plover survival analysis
 ##M tarjan
 ##September 8, 2017
+##
 
 ##install required package
 #install.packages("devtools")
 #library(devtools) ##required to install packages from github
 
+##Please download and install Rtools 3.4 from http://cran.r-project.org/bin/windows/Rtools/
 #devtools::install_github('kfdnm','NMML')
 library(kfdnm)
 
 library(dplyr) ##required for groupby
 
 library(ggplot2)
+
+library(stringr) ##required for string processing
 
 ##SIMULATE DATA
 # num_kf Target numer of known-fate individuals in the group
@@ -52,20 +56,30 @@ wb<-"S:/Science/Banding Database/SFBBO Banding Database.accdb" ##file path for u
 con<-odbcConnectAccess2007(wb) ##open connection to database
 
 ##get resight data
-qry<-"SELECT rrBandNumber AS BandNumber, 'NA' AS Age, b.Sex, rrDate AS [Date], rrLocation AS Location, 'resight' AS Type FROM ResightRecords as r
+qry<-"SELECT rrBandNumber AS id, 'NA' AS Age, b.Sex, rrDate AS [Date], year(rrDate) AS year, rrLocation AS Location, 'resight' AS Type, IIF(rrStatus = 'Alive', 1, 0) AS CH FROM ResightRecords as r
   LEFT OUTER JOIN BandingRecords AS b ON r.rrBandNumber = b.BandNumber
-  WHERE rrSpeciesCode = 'SNPL' "
+  WHERE rrSpeciesCode = 'SNPL' AND rrStatus IN ('Alive', 'Dead') "
 
 kf.dat1<-sqlQuery(con, qry); head(kf.dat1) ##import the queried table
 
 ##get capture data
-qry<-"SELECT BandNumber, Age, Sex, CaptureDate AS [Date], Location, 'capture' AS Type FROM BandingRecords
+##assumes all birds alive when banded
+qry<-"SELECT BandNumber AS id, Age, Sex, CaptureDate AS [Date], year(CaptureDate) AS year, Location, 'capture' AS Type, 1 AS CH FROM BandingRecords
 WHERE SpeciesCode = 'SNPL' "
 
 kf.dat2<-sqlQuery(con, qry); head(kf.dat2) ##import the queried table
 
+##when finished with db, close the connection
+odbcCloseAll()
+
 ##combine resight and capture data
 kf.dat<-rbind(kf.dat2, kf.dat1)
+
+##create kf_data (known fate) with colnames id, year, survey, CH (1=alive, 0=dead)
+kf.dat<-subset(kf.dat, select=c(id, year, Date, CH, Location), subset= str_detect(string = kf.dat$Location, pattern = "^E") ) ##select only sites in eden landing
+
+##order data by group and then time
+kf.dat<-kf.dat[order(kf.dat$id, kf.dat$year, kf.dat$Date),]; head(kf.dat)
 
 ##unknown fate individuals
 #wb<-"S:/Science/Waterbird/Databases - enter data here!/SNPL/SNPL.accdb"  ##file path for use when connected to SFBBO server
@@ -97,6 +111,7 @@ head(uf.dat.sum)
 uf.dat.sum<-subset(uf.dat.sum, year > 1980)
 
 dnm_data<-subset(uf.dat.sum, group == "Eden Landing")
+kf_data<-kf.dat
 
 ##visualize the data
 vis <- ggplot(data = dnm_data, aes(x = Date, y = n))
@@ -104,11 +119,12 @@ vis <- vis + geom_point()
 #vis <- vis + facet_grid(facets = dnm_data$group~., scales = "free_y")
 vis
 
-##create complimentary temp data for kf.indiv
-sim.dat<-sim_data(num_kf = 5, num_years = max(dnm_data$year)-min(dnm_data$year), num_surveys = round(mean(table(dnm_data$year)),0), recruit_rate = 5, init_rate = 15, survival_dnm = .90, survival_kf = .90, perfect_survey_rate = .1, detection = .7)
-
-kf_data<-sim.dat$kf_data
-dnm_data<-sim.dat$dnm_data
+##visual data for known-fate birds
+j<-0
+j<-j+1
+fplot <- ggplot(data = subset(kf_data, subset = id == unique(kf_data$id)[j]), aes(x = Date, y = CH))
+fplot <- fplot + geom_point()
+fplot
 
 ###
 ### Create list of fixed parameters
