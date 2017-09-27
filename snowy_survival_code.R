@@ -47,13 +47,25 @@ dnm_data<-sim.dat$dnm_data
 library(RODBC)
 
 ##known fate individuals
-#wb<-"S:/Science/Banding Database/SFBBO Banding Database.accdb" ##file path for use when connected to SFBBO server
+wb<-"S:/Science/Banding Database/SFBBO Banding Database.accdb" ##file path for use when connected to SFBBO server
 #wb<- "C:/Users/max/Desktop/Tarjan/Science/Plover/SFBBO Banding Database copy 22Sep2017.accdb" #filepath for work locally on Birds25
-#con<-odbcConnectAccess2007(wb) ##open connection to database
+con<-odbcConnectAccess2007(wb) ##open connection to database
 
-#qry<-"SELECT * FROM Plover"
+##get resight data
+qry<-"SELECT rrBandNumber AS BandNumber, 'NA' AS Age, b.Sex, rrDate AS [Date], rrLocation AS Location, 'resight' AS Type FROM ResightRecords as r
+  LEFT OUTER JOIN BandingRecords AS b ON r.rrBandNumber = b.BandNumber
+  WHERE rrSpeciesCode = 'SNPL' "
 
-#kf.dat<-sqlQuery(con, qry); head(kf.dat) ##import the queried table
+kf.dat1<-sqlQuery(con, qry); head(kf.dat1) ##import the queried table
+
+##get capture data
+qry<-"SELECT BandNumber, Age, Sex, CaptureDate AS [Date], Location, 'capture' AS Type FROM BandingRecords
+WHERE SpeciesCode = 'SNPL' "
+
+kf.dat2<-sqlQuery(con, qry); head(kf.dat2) ##import the queried table
+
+##combine resight and capture data
+kf.dat<-rbind(kf.dat2, kf.dat1)
 
 ##unknown fate individuals
 #wb<-"S:/Science/Waterbird/Databases - enter data here!/SNPL/SNPL.accdb"  ##file path for use when connected to SFBBO server
