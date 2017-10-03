@@ -73,13 +73,26 @@ kf.dat2<-sqlQuery(con, qry); head(kf.dat2) ##import the queried table
 odbcCloseAll()
 
 ##combine resight and capture data
-kf.dat<-rbind(kf.dat2, kf.dat1)
+kf.dat<-unique(rbind(kf.dat2, kf.dat1))
 
 ##create kf_data (known fate) with colnames id, year, survey, CH (1=alive, 0=dead)
-kf.dat<-subset(kf.dat, select=c(id, year, Date, CH, Location), subset= str_detect(string = kf.dat$Location, pattern = "^E") ) ##select only sites in eden landing
+#kf.dat<-subset(kf.dat, select=c(id, year, Date, CH, Location))
+#kf.dat<-subset(kf.dat, select=c(id, year, Date, CH, Location), subset= str_detect(string = kf.dat$Location, pattern = "^E") ) ##select only sites in eden landing
 
 ##order data by group and then time
 kf.dat<-kf.dat[order(kf.dat$id, kf.dat$year, kf.dat$Date),]; head(kf.dat)
+
+##Ages
+##https://www.pwrc.usgs.gov/bbl/manual/age.cfm
+##0=UNK
+##1 = AHY after hatching year
+##2=HY
+##4=LOCAL young bird incapable of substantial flight
+##5=SY*
+##6=ASY*
+##7=TY*
+##8=ATY*
+##*NOTE NEEDED
 
 ##unknown fate individuals
 #wb<-"S:/Science/Waterbird/Databases - enter data here!/SNPL/SNPL.accdb"  ##file path for use when connected to SFBBO server
