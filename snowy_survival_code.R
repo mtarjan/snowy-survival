@@ -17,6 +17,8 @@ library(ggplot2)
 
 library(stringr) ##required for string processing
 
+library(RODBC) ##required to pull data from access databases
+
 ##SIMULATE DATA
 # num_kf Target numer of known-fate individuals in the group
 # num_years Number of years for the study
@@ -48,7 +50,6 @@ dnm_data<-sim.dat$dnm_data
   ##only actually requires group, n, R for analysis. other variables were used to generate these values in the example
 
 ###load SNPL data from database
-library(RODBC)
 
 ##known fate individuals
 wb<-"S:/Science/Banding Database/SFBBO Banding Database.accdb" ##file path for use when connected to SFBBO server
@@ -99,7 +100,7 @@ kf.dat<-kf.dat[order(kf.dat$id, kf.dat$year, kf.dat$Date),]; head(kf.dat)
 wb<- "C:/Users/max/Desktop/Tarjan/Science/Plover/SNPL copy 22Sep2017.accdb" #filepath for work locally on Birds25
 con<-odbcConnectAccess2007(wb) ##open connection to database
 
-qry<-"SELECT year(i.Date) AS year, i.Date, s.SurveyID AS survey, 0 AS perfect_survey, 0 AS R, s.TotalObserved AS n, p.Complex AS [group]
+qry<-"SELECT year(i.Date) AS year, i.Date, s.SurveyID AS survey, 0 AS perfect_survey, 0 AS R, s.TotalObserved AS n, p.Complex AS [group], p.PondNumber
   FROM ([SNPL SURVEY] AS s
   LEFT OUTER JOIN [SNPL Observers Info] AS i ON s.SurveyID = i.SurveyID)
   LEFT OUTER JOIN LookupPond AS p ON s.PondNumber = p.PondNumber
@@ -110,26 +111,69 @@ uf.dat<-sqlQuery(con, qry); head(uf.dat) ##import the queried table
 ##when finished with db, close the connection
 odbcCloseAll()
 
-##get summary n for a given date and location
-uf.dat.sum<-uf.dat %>% group_by(survey, group) %>% mutate(survey.n=sum(n)) %>% data.frame()
-##order by group, then time
-uf.dat.sum<-uf.dat.sum[order(uf.dat.sum$group, uf.dat.sum$year, uf.dat.sum$survey),]; head(uf.dat.sum)
-##remove n and remove duplicates; rename survey.n to n
-uf.dat.sum<-subset(uf.dat.sum, select = -n); uf.dat.sum<-unique(uf.dat.sum)
-names(uf.dat.sum)[length(uf.dat.sum)]<-"n"
-head(uf.dat.sum)
 
 ##clean up data
 ##remove nonsensical year
-uf.dat.sum<-subset(uf.dat.sum, year > 1980)
+#uf.dat.sum<-subset(uf.dat.sum, year > 1980)
 
-dnm_data<-subset(uf.dat.sum, group == "Eden Landing")
+##restrict surveys to "window surveys" when only reproductive individuals are present (ie exclude counts of migratory birds)
+window.dates<-read.csv("SNPL Breeding Window Dates.csv")
+window.dates$start.date<-as.Date(window.dates$start.date, "%m/%d/%Y")
+window.dates$end.date<-as.Date(window.dates$end.date, "%m/%d/%Y")
+
+uf.dat.win<-dim(0) ##counts of untagged indivs during the "window surveys" for each year
+for (j in 1:nrow(window.dates)) {
+  year.temp<-window.dates$Year[j]
+  dat.temp<-subset(uf.dat, year==year.temp)
+  win.temp<-window.dates[j,]
+  out.temp<- subset(dat.temp, as.Date(dat.temp$Date) >= win.temp$start.date & as.Date(dat.temp$Date) <= win.temp$end.date)
+  
+  if (nrow(out.temp)>0) {
+    ##for survey dates that apply to all locations
+    if (win.temp$locations=="all") {
+      uf.dat.win<-rbind(uf.dat.win, out.temp)
+    }
+    
+    ##for survey windows that apply to select locations
+    if (win.temp$locations=="Hayward") {
+      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, group=="Hayward"))
+    }
+    
+    if (win.temp$locations=="Hayward, Napa") {
+      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, group %in% c("Hayward", "Napa")))
+    }
+    
+    if (win.temp$locations=="all-Hayward") {
+      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, group !=  "Hayward"))
+    }
+    
+    if (win.temp$locations=="all-Hayward, Napa") {
+      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, group != "Hayward" & group != "Napa"))
+    }
+  }
+}
+
+##FIGURE OUT WHAT LOCATIONS WE SHOULD MAKE THE "GROUP" VARIABLE
+##get summary n for a given date and location
+uf.dat.sum<-uf.dat.win %>% group_by(year, group) %>% mutate(year.n=sum(n)) %>% data.frame()
+##order by group, then time
+uf.dat.sum<-uf.dat.sum[order(uf.dat.sum$group, uf.dat.sum$year),]; head(uf.dat.sum)
+##rename survey to be all 1, since we will represent each yearly count during the window survye as the one and only survey
+uf.dat.sum$survey<-rep(1, nrow(uf.dat.sum))
+##remove n and remove duplicates; rename survey.n to n
+uf.dat.sum<-subset(uf.dat.sum, select = -c(n,Date)); uf.dat.sum<-unique(uf.dat.sum)
+names(uf.dat.sum)[length(uf.dat.sum)]<-"n"
+head(uf.dat.sum)
+
+
+#dnm_data<-subset(uf.dat.sum, group == "Eden Landing")
+dnm_data<-uf.dat.sum
 kf_data<-kf.dat
 
 ##visualize the data
-vis <- ggplot(data = dnm_data, aes(x = Date, y = n))
+vis <- ggplot(data = dnm_data, aes(x = year, y = n))
 vis <- vis + geom_point()
-#vis <- vis + facet_grid(facets = dnm_data$group~., scales = "free_y")
+vis <- vis + facet_grid(facets = dnm_data$group~., scales = "free_y")
 vis
 
 ##visual data for known-fate birds
