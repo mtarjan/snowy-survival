@@ -65,13 +65,26 @@ kf.dat1<-sqlQuery(con, qry); head(kf.dat1) ##import the queried table
 
 ##get capture data
 ##assumes all birds alive when banded
-qry<-"SELECT BandNumber AS id, Age, Sex, CaptureDate AS [Date], year(CaptureDate) AS year, Location, 'capture' AS Type, 1 AS CH FROM BandingRecords
-WHERE SpeciesCode = 'SNPL' "
+qry<-"SELECT BandNumber AS id, Age, Sex, CaptureDate AS [Date], year(CaptureDate) AS year, SNO.snoNestPondID AS Location, 'capture' AS Type, 1 AS CH FROM BandingRecords AS BR
+  LEFT OUTER JOIN SNPLnestOffspring AS SNO ON BR.BRautoID = SNO.snoBandingRecordID
+  WHERE SpeciesCode = 'SNPL' "
 
 kf.dat2<-sqlQuery(con, qry); head(kf.dat2) ##import the queried table
 
+##get capture location for parents
+qry<-"SELECT IIF(snpMaleBandNum IS NULL, snpFemaleBandNum, snpMaleBandNum) AS id, snpNestYear AS year, snpNestPondID AS Location
+FROM snplNestParents"
+
+parent.locs<-sqlQuery(con, qry); head(parent.locs)
+
 ##when finished with db, close the connection
 odbcCloseAll()
+
+##remove NA from parent locs
+parent.locs<-parent.locs[complete.cases(parent.locs),]
+##add parent locs to kf.dat2
+kf.dat3<-dplyr::left_join(x=kf.dat2, y=subset(parent.locs, select=c(id, year, Location)), by = c("id","year"))
+kf.dat2$Location[which(is.na(kf.dat2$Location))]<-kf.dat3$Location.y[which(is.na(kf.dat2$Location))] ##for NA locations in original dataset, replace them with parent locations in kf.dat3
 
 ##combine resight and capture data
 kf.dat<-unique(rbind(kf.dat2, kf.dat1))
