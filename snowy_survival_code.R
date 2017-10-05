@@ -109,8 +109,8 @@ kf.dat<-kf.dat[order(kf.dat$id, kf.dat$year, kf.dat$Date),]; head(kf.dat)
 ##*NOTE NEEDED
 
 ##unknown fate individuals
-#wb<-"S:/Science/Waterbird/Databases - enter data here!/SNPL/SNPL.accdb"  ##file path for use when connected to SFBBO server
-wb<- "C:/Users/max/Desktop/Tarjan/Science/Plover/SNPL copy 22Sep2017.accdb" #filepath for work locally on Birds25
+wb<-"S:/Science/Waterbird/Databases - enter data here!/SNPL/SNPL.accdb"  ##file path for use when connected to SFBBO server
+#wb<- "C:/Users/max/Desktop/Tarjan/Science/Plover/SNPL copy 22Sep2017.accdb" #filepath for work locally on Birds25
 con<-odbcConnectAccess2007(wb) ##open connection to database
 
 qry<-"SELECT year(i.Date) AS year, i.Date, s.SurveyID AS survey, 0 AS perfect_survey, 0 AS R, s.TotalObserved AS n, p.Complex AS [group], p.PondNumber
