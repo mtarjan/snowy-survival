@@ -80,14 +80,41 @@ parent.locs<-sqlQuery(con, qry); head(parent.locs)
 ##when finished with db, close the connection
 odbcCloseAll()
 
+##remove records with unknown id
+kf.dat1<-kf.dat1[complete.cases(kf.dat1$id),]
+
 ##remove NA from parent locs
 parent.locs<-parent.locs[complete.cases(parent.locs),]
 ##add parent locs to kf.dat2
 kf.dat3<-dplyr::left_join(x=kf.dat2, y=subset(parent.locs, select=c(id, year, Location)), by = c("id","year"))
 kf.dat2$Location[which(is.na(kf.dat2$Location))]<-kf.dat3$Location.y[which(is.na(kf.dat2$Location))] ##for NA locations in original dataset, replace them with parent locations in kf.dat3
 
+##missing locations provided by Ben
+mlocs<-read.csv("birds without ponds.csv")
+mlocs$Location<-mlocs$Pond.Association
+mlocs<-subset(mlocs, select=c(id, Age, Sex, Date, year, Location, Type, CH))
+mlocs<-mlocs[complete.cases(mlocs),]
+kf.dat4<-dplyr::left_join(x=kf.dat2, y=subset(mlocs, select=c(id, year, Location)), by = c("id","year"))
+kf.dat2$Location[which(is.na(kf.dat2$Location))]<-kf.dat4$Location.y[which(is.na(kf.dat2$Location))] ##for NA locations in original dataset, replace them with  locations in mlocs (missing locations)
+
 ##combine resight and capture data
 kf.dat<-unique(rbind(kf.dat2, kf.dat1))
+
+##fix spelling of crittenden->don
+#kf.dat$Location[which(kf.dat$Location=="Crittenden Marsh East")]<-"Crittendon Marsh East"
+
+##add pond group to locations
+pond.groups<-read.csv("pond names.csv")
+kf.dat5<-dplyr::left_join(x=kf.dat, y=subset(pond.groups, select=c(Pond, Pond.Group)), by = c("Location" = "Pond"))
+
+##NEED TO ASSIGN LOCATION WHERE BIRD FIRST APPEARED?? OTHERWISE AN INDIVIDUAL WILL BE ANALYZED IN TWO DIFFERENT GROUPS
+##their group is their first CAPTURE location
+kf.dat5$group<-rep(NA, nrow(kf.dat5))
+for (j in 1:length(unique(kf.dat5$id))) {
+  kf.dat5$group[which(kf.dat5$id==unique(kf.dat$id)[j])]<-as.character(kf.dat5$Pond.Group[which(kf.dat5$id == unique(kf.dat$id)[j] & kf.dat5$Type=="capture")][1])
+}
+
+kf.dat<-kf.dat5
 
 ##create kf_data (known fate) with colnames id, year, survey, CH (1=alive, 0=dead)
 #kf.dat<-subset(kf.dat, select=c(id, year, Date, CH, Location))
@@ -113,7 +140,7 @@ wb<-"S:/Science/Waterbird/Databases - enter data here!/SNPL/SNPL.accdb"  ##file 
 #wb<- "C:/Users/max/Desktop/Tarjan/Science/Plover/SNPL copy 22Sep2017.accdb" #filepath for work locally on Birds25
 con<-odbcConnectAccess2007(wb) ##open connection to database
 
-qry<-"SELECT year(i.Date) AS year, i.Date, s.SurveyID AS survey, 0 AS perfect_survey, 0 AS R, s.TotalObserved AS n, p.Complex AS [group], p.PondNumber
+qry<-"SELECT year(i.Date) AS year, i.Date, s.SurveyID AS survey, 0 AS perfect_survey, 0 AS R, s.TotalObserved AS n, p.Complex AS [complex], p.PondNumber
   FROM ([SNPL SURVEY] AS s
   LEFT OUTER JOIN [SNPL Observers Info] AS i ON s.SurveyID = i.SurveyID)
   LEFT OUTER JOIN LookupPond AS p ON s.PondNumber = p.PondNumber
@@ -149,24 +176,30 @@ for (j in 1:nrow(window.dates)) {
     
     ##for survey windows that apply to select locations
     if (win.temp$locations=="Hayward") {
-      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, group=="Hayward"))
+      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, complex=="Hayward"))
     }
     
     if (win.temp$locations=="Hayward, Napa") {
-      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, group %in% c("Hayward", "Napa")))
+      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, complex %in% c("Hayward", "Napa")))
     }
     
     if (win.temp$locations=="all-Hayward") {
-      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, group !=  "Hayward"))
+      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, complex !=  "Hayward"))
     }
     
     if (win.temp$locations=="all-Hayward, Napa") {
-      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, group != "Hayward" & group != "Napa"))
+      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, complex != "Hayward" & complex != "Napa"))
     }
   }
 }
 
 ##FIGURE OUT WHAT LOCATIONS WE SHOULD MAKE THE "GROUP" VARIABLE
+#uf.dat$group<-uf.dat$complex
+
+##use Ben's groups
+uf.dat.win<-dplyr::left_join(x=uf.dat.win, y=subset(pond.groups, select=c(Pond, Pond.Group)), by = c("PondNumber" = "Pond"))
+uf.dat.win$group<-uf.dat.win$Pond.Group
+
 ##get summary n for a given date and location
 uf.dat.sum<-uf.dat.win %>% group_by(year, group) %>% mutate(year.n=sum(n)) %>% data.frame()
 ##order by group, then time
@@ -201,8 +234,8 @@ fplot
 ###
 
 fixed_list = list(
-  recruit=ifelse(sim.dat$dnm_data$year!=1 & sim.dat$dnm_data$survey==1, NA, 0),
-  detection=ifelse(sim.dat$dnm_data$perfect==1, 1, NA)
+  recruit=ifelse(dnm_data$year!=1 & dnm_data$survey==1, NA, 0),
+  detection=ifelse(dnm_data$perfect==1, 1, NA)
 )
 
 ###
