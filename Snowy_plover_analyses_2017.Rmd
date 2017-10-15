@@ -1,0 +1,40 @@
+---
+title: "Snowy Plover Analyses 2017"
+author: "Max Tarjan"
+date: "October 14, 2017"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Draft Report prepared for the Bay Delta USFWS
+#Introduction
+#Methods
+We used known-fate data to fit parameters for a known-fate analysis and an n-mixture model to fit data for counts that represent birds with unknown fates. Parameters from both sets of data and approaches were estimated simultaneously. The estimates with the most support according to both analyses are reported.
+
+#Results
+Survival and recruitment estimates
+
+```{r, echo=FALSE}
+source("snowy_survival_code.R")
+
+###
+### Estimates and 95% CI
+###
+
+# omega
+cat("Survival: \n")
+cat(plogis(par[1]), "(", plogis(par[1]-2*se[1]), ",",plogis(par[1]+2*se[1]), ")\n")
+
+# gamma
+cat("Recruitment rate:")
+cat(exp(par[2]), "(", exp(par[2]-2*se[2]), ",",exp(par[2]+2*se[2]), ")\n")
+
+# p
+cat("Detection prob.:\n")
+cat(plogis(par[3]), "(", plogis(par[3]-2*se[3]), ",",plogis(par[3]+2*se[3]), ")\n")
+```
+
+
