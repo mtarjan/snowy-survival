@@ -103,25 +103,48 @@ kf.dat<-unique(rbind(kf.dat2, kf.dat1))
 ##fix spelling of crittenden->don
 #kf.dat$Location[which(kf.dat$Location=="Crittenden Marsh East")]<-"Crittendon Marsh East"
 
+
 ##add pond group to locations
 pond.groups<-read.csv("pond names.csv")
-kf.dat5<-dplyr::left_join(x=kf.dat, y=subset(pond.groups, select=c(Pond, Pond.Group)), by = c("Location" = "Pond"))
+kf.dat<-dplyr::left_join(x=kf.dat, y=subset(pond.groups, select=c(Pond, Pond.Group)), by = c("Location" = "Pond"))
+
+
+##ADD CHICKS PRESUMED DEAD
+broods<-read.csv("Brood Groups.csv")
+broods<-broods[,1:3]
+
+##add brood to kf.dat
+kf.dat<-dplyr::left_join(x=kf.dat, y=subset(broods, select=c(Nest.Group, Band.Number)), by = c("id" = "Band.Number"))
+
+
+for (j in 1:length(unique(kf.dat$id))) { ##for each bird
+  dat.temp<-subset(kf.dat, id==unique(kf.dat$id)[j])
+  if (length(which(dat.temp$CH==0))>0 ) {next} ##if we already know the death date or the brood group is unknown, then move to the next bird
+  if (is.na(dat.temp$Nest.Group[1]) | dat.temp$Nest.Group[1]=="NA" | dat.temp$Nest.Group[1]=="") {next}##if the brood group is unknown, then move to the next bird
+  brood.temp<-subset(kf.dat, Nest.Group==dat.temp$Nest.Group[1])
+  b.day<-dat.temp$Date[which.min(dat.temp$Date)] ##focal bird bday
+  last.seen<-dat.temp$Date[which.max(dat.temp$Date)] ##date focal bird last observed alive
+  ##next date when brood-mates were observed after "last seen" date
+  brood.dates<-subset(brood.temp, Date > last.seen)$Date
+  if (length(brood.dates)==0) {next} ##if there are no later sightings of the brood
+  brood.resight<-min(brood.dates)
+  if(brood.resight > b.day+ 30*24*3600) {next} ##if the sighting is after the fledge date, move to the next bird
+  kf.dat<-rbind(kf.dat, data.frame(id=dat.temp$id[1], Age = dat.temp$Age[1], Sex= dat.temp$Sex[1], Date=brood.resight, year=format(brood.resight, format="%Y"), Location="", Type="missing", CH=0, Pond.Group = "", Nest.Group=dat.temp$Nest.Group[1]))
+}
 
 ##NEED TO ASSIGN LOCATION WHERE BIRD FIRST APPEARED?? OTHERWISE AN INDIVIDUAL WILL BE ANALYZED IN TWO DIFFERENT GROUPS
 ##their group is their first CAPTURE location
-kf.dat5$group<-rep(NA, nrow(kf.dat5))
-for (j in 1:length(unique(kf.dat5$id))) {
-  kf.dat5$group[which(kf.dat5$id==unique(kf.dat$id)[j])]<-as.character(kf.dat5$Pond.Group[which(kf.dat5$id == unique(kf.dat$id)[j] & kf.dat5$Type=="capture")][1])
+kf.dat$group<-rep(NA, nrow(kf.dat))
+for (j in 1:length(unique(kf.dat$id))) {
+  kf.dat$group[which(kf.dat$id==unique(kf.dat$id)[j])]<-as.character(kf.dat$Pond.Group[which(kf.dat$id == unique(kf.dat$id)[j] & kf.dat$Type=="capture")][1])
 }
-
-kf.dat<-kf.dat5
 
 ##create kf_data (known fate) with colnames id, year, survey, CH (1=alive, 0=dead)
 #kf.dat<-subset(kf.dat, select=c(id, year, Date, CH, Location))
 #kf.dat<-subset(kf.dat, select=c(id, year, Date, CH, Location), subset= str_detect(string = kf.dat$Location, pattern = "^E") ) ##select only sites in eden landing
 
 ##order data by group and then time
-kf.dat<-kf.dat[order(kf.dat$id, kf.dat$year, kf.dat$Date),]; head(kf.dat)
+kf.dat<-kf.dat[order(kf.dat$group, kf.dat$id, kf.dat$Date),]; head(kf.dat)
 
 ##Ages
 ##https://www.pwrc.usgs.gov/bbl/manual/age.cfm
