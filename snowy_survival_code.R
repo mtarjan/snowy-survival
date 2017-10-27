@@ -126,11 +126,13 @@ for (j in 1:length(unique(kf.dat$id))) { ##for each bird
   last.seen<-dat.temp$Date[which.max(dat.temp$Date)] ##date focal bird last observed alive
   ##next date when brood-mates were observed after "last seen" date
   brood.dates<-subset(brood.temp, Date > last.seen)$Date
-  if (length(brood.dates)==0) {next} ##if there are no later sightings of the brood
+  if (length(brood.dates)==0) {next} ##if the brood is never observed after the last seen date of the focal bird, move to next bird
   brood.resight<-min(brood.dates)
   if(brood.resight > b.day+ 30*24*3600) {next} ##if the sighting is after the fledge date, move to the next bird
   kf.dat<-rbind(kf.dat, data.frame(id=dat.temp$id[1], Age = dat.temp$Age[1], Sex= dat.temp$Sex[1], Date=brood.resight, year=format(brood.resight, format="%Y"), Location="", Type="missing", CH=0, Pond.Group = "", Nest.Group=dat.temp$Nest.Group[1]))
 }
+
+#write.csv(subset(kf.dat, Type=="missing"), "presumed_dead.csv", row.names=F)
 
 ##NEED TO ASSIGN LOCATION WHERE BIRD FIRST APPEARED?? OTHERWISE AN INDIVIDUAL WILL BE ANALYZED IN TWO DIFFERENT GROUPS
 ##their group is their first CAPTURE location
@@ -295,3 +297,41 @@ cat(exp(par[2]), "(", exp(par[2]-2*se[2]), ",",exp(par[2]+2*se[2]), ")\n")
 # p
 cat("Detection prob.:\n")
 cat(plogis(par[3]), "(", plogis(par[3]-2*se[3]), ",",plogis(par[3]+2*se[3]), ")\n")
+
+
+### SURVIVAL ANALYSIS USING SURVIVAL PACKAGE ###
+
+#install.packages("survival")
+library(survival)
+
+##get time elapsed from first to last date as numeric (capture to last resight) and fate (in this case 1 is dead and 0 is alive)
+surv.dat<-dim(0)
+for (j in 1:length(unique(kf.dat$id))) {
+  id.temp<-unique(kf.dat$id)[j]
+  bday.temp<-subset(kf.dat, id==id.temp & Type=="capture" & Age==4)$Date
+  last.temp<-max(kf.dat$Date[which(kf.dat$id==id.temp)])
+  if (length(bday.temp)==0) {next}
+  dur.temp<-as.numeric(last.temp-bday.temp)
+  if (dur.temp==0) {next}
+  fate.temp<-subset(kf.dat, id==id.temp & Date==last.temp)$CH
+  fate.surv.temp<-ifelse(fate.temp==1, 0, 1) ##if fate is 0, then make it 1, else make it 0
+  
+  if (is.na(subset(kf.dat, id==id.temp)$Nest.Group[1])) {next} ##fit the survival curve for known broods only
+  if (dur.temp>31) {next} ##fit the survival curve only until the age of fledging
+  
+  surv.dat<-rbind(surv.dat, data.frame(duration=dur.temp, fate=fate.surv.temp))
+}
+
+surv.object <- Surv(time = surv.dat$duration, event = surv.dat$fate)
+
+surv.fitted.Motulsky <- survfit(surv.object ~ 1, conf.type = "log-log")
+plot(surv.fitted.Motulsky)
+
+surv.fitted.default <- survfit(surv.object ~ 1)
+plot(surv.fitted.default, xlab="Days", ylab="Proportion surviving")
+
+##plot censored individuals
+#plot(surv.fitted.default, mark.time = T, mark=16)
+
+print(str_c("The proportion of chicks that survive to day ", last(surv.fitted.default$time)," is ", round(last(surv.fitted.default$surv),2), " (", round(last(surv.fitted.default$upper),2), ", ", round(last(surv.fitted.default$lower),2),")"))
+
