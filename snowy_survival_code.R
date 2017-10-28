@@ -259,11 +259,23 @@ for (j in 1:length(unique(uf.dat$Pond.Group))) {
   
   ## SUM BY POND GROUP
   
-  dat.temp$n<-dat.temp[,ncol(dat.temp)-pond.count+1] + dat.temp[,ncol(dat.temp)] ##get the sum of the counts for all ponds in the pond group. returns NA if a count is missing for a pond on that date
-  ## CAN CHANGE LINE ABOVE TO NA.RM=T IF WANT TO INCLUDE COUNTS THAT HAVE MISSING DATA
-  dat.temp<-subset(dat.temp, is.na(n)==F, select=c(year, Date, survey, perfect_survey, R, month, Pond.Group, n))
+  ##get the sum of the counts for all ponds in the pond group. returns NA if a count is missing for a pond on that date
+  if(pond.count>1) {
+    dat.temp$n<-apply(dat.temp[,(ncol(dat.temp)-pond.count+1):ncol(dat.temp)], FUN=sum, na.rm=T, MARGIN = 1)
+  } else {
+    dat.temp$n<-last(dat.temp)
+  }
+  
+  dat.temp<-subset(dat.temp, select=c(year, Date, perfect_survey, R, month, Pond.Group, n))
   uf.dat.wk<-rbind(uf.dat.wk, dat.temp)
 }
+##take the max if more than one count for each date
+uf.dat.wk<-uf.dat.wk %>% group_by(Date, Pond.Group) %>% mutate(n.max=max(n)) %>% data.frame()
+uf.dat.wk$n<-uf.dat.wk$n.max; uf.dat.wk<-subset(uf.dat.wk, select= -n.max) ##replace n with n.max and remove duplicates
+uf.dat.wk<-uf.dat.wk[which(duplicated(uf.dat.wk)==F),]
+
+##remove na counts
+uf.dat.wk<-subset(uf.dat.wk, is.na(n)==F)
 
 uf.dat.sum<-uf.dat.wk
 
@@ -470,3 +482,5 @@ plot(fitnb, posterior = TRUE)
 ##theta is dispersion parameter
 fitnb
 ##https://rdrr.io/cran/jointNmix/man/Nmix.html
+
+cbind(as.character(groups.temp),1:length(groups.temp))
