@@ -13,6 +13,8 @@ library(kfdnm)
 
 library(dplyr) ##required for groupby
 
+library(tidyr)
+
 library(ggplot2)
 
 library(stringr) ##required for string processing
@@ -138,7 +140,7 @@ for (j in 1:length(unique(kf.dat$id))) { ##for each bird
 ##their group is their first CAPTURE location
 kf.dat$group<-rep(NA, nrow(kf.dat))
 for (j in 1:length(unique(kf.dat$id))) {
-  kf.dat$group[which(kf.dat$id==unique(kf.dat$id)[j])]<-as.character(kf.dat$Pond.Group[which(kf.dat$id == unique(kf.dat$id)[j] & kf.dat$Type=="capture")][1])
+  kf.dat$group[which(kf.dat$id==unique(kf.dat$id)[j])]<-as.character(kf.dat$Location[which(kf.dat$id == unique(kf.dat$id)[j] & kf.dat$Type=="capture")][1])
 }
 
 ##create kf_data (known fate) with colnames id, year, survey, CH (1=alive, 0=dead)
@@ -218,24 +220,68 @@ for (j in 1:nrow(window.dates)) {
   }
 }
 
+#uf.dat<-uf.dat.win
+
+###ALTERNATIVE: RESTRICT TO MAY AND JUNE
+uf.dat$month<-as.numeric(format(uf.dat$Date, "%m"))
+uf.dat<-subset(uf.dat, month %in% c(5,6) & PondNumber %in% read.csv("Ponds Surveyed Weekly.csv", header=F)[,1] & year>2013) ##use data in May and June from ponds that are surveyed weekly; also choose years when groups were tracked closely
+
+
 ##FIGURE OUT WHAT LOCATIONS WE SHOULD MAKE THE "GROUP" VARIABLE
 #uf.dat$group<-uf.dat$complex
 
 ##use Ben's groups
-uf.dat.win<-dplyr::left_join(x=uf.dat.win, y=subset(pond.groups, select=c(Pond, Pond.Group)), by = c("PondNumber" = "Pond"))
-uf.dat.win$group<-uf.dat.win$Pond.Group
+uf.dat<-dplyr::left_join(x=uf.dat, y=subset(pond.groups, select=c(Pond, Pond.Group)), by = c("PondNumber" = "Pond"))
+#uf.dat$group<-uf.dat$Pond.Group ##pond group as the location
+#uf.dat$group<-uf.dat$PondNumber ##ponds as their own location
+
+## GROUP BY POND ##
 
 ##get summary n for a given date and location
-uf.dat.sum<-uf.dat.win %>% group_by(year, group) %>% mutate(year.n=sum(n)) %>% data.frame()
+#uf.dat.sum<-uf.dat %>% group_by(Date, PondNumber) %>% mutate(group.n=sum(n)) %>% data.frame()
+##remove n and remove duplicates; rename survey.n to n
+#uf.dat.sum<-subset(uf.dat.sum, select = -c(n)); uf.dat.sum<-unique(uf.dat.sum)
+#names(uf.dat.sum)[length(uf.dat.sum)]<-"n"
+#head(uf.dat.sum)
+
+##ALTERNATIVE TO GROUP BY WEEK
+uf.dat.wk<-dim(0)
+for (j in 1:length(unique(uf.dat$Pond.Group))) {
+  dat.temp<-subset(uf.dat, Pond.Group==unique(uf.dat$Pond.Group)[j]) ##get data for a given group
+  
+  ## SUM BY POND
+  
+  dat.temp<-dat.temp %>% group_by(Date, PondNumber) %>% mutate(pond.date.n=sum(n)) %>% data.frame() #sum n by pond
+  dat.temp<-subset(dat.temp, select=-n) ##remove old n before summarized
+  dat.temp<-unique(dat.temp) #remove duplicates
+  pond.count<-length(unique(dat.temp$PondNumber)) ##get unique number of ponds
+  dat.temp<-spread(dat.temp, PondNumber, pond.date.n)
+  
+  ## SUM BY POND GROUP
+  
+  dat.temp$n<-dat.temp[,ncol(dat.temp)-pond.count+1] + dat.temp[,ncol(dat.temp)] ##get the sum of the counts for all ponds in the pond group. returns NA if a count is missing for a pond on that date
+  ## CAN CHANGE LINE ABOVE TO NA.RM=T IF WANT TO INCLUDE COUNTS THAT HAVE MISSING DATA
+  dat.temp<-subset(dat.temp, is.na(n)==F, select=c(year, Date, survey, perfect_survey, R, month, Pond.Group, n))
+  uf.dat.wk<-rbind(uf.dat.wk, dat.temp)
+}
+
+uf.dat.sum<-uf.dat.wk
+
+uf.dat.sum$group<-uf.dat.sum$Pond.Group
+
 ##order by group, then time
-uf.dat.sum<-uf.dat.sum[order(uf.dat.sum$group, uf.dat.sum$year),]; head(uf.dat.sum)
+uf.dat.sum<-uf.dat.sum[order(uf.dat.sum$group, uf.dat.sum$Date),]; head(uf.dat.sum)
+
+##OVERWRITE WITH SEQUENTIAL SURVEY NUMBER; requires that the data are ordered by group and then by date
+##ADD SURVEY NUMBER
 ##rename survey to be all 1, since we will represent each yearly count during the window survye as the one and only survey
 uf.dat.sum$survey<-rep(1, nrow(uf.dat.sum))
-##remove n and remove duplicates; rename survey.n to n
-uf.dat.sum<-subset(uf.dat.sum, select = -c(n,Date)); uf.dat.sum<-unique(uf.dat.sum)
-names(uf.dat.sum)[length(uf.dat.sum)]<-"n"
-head(uf.dat.sum)
 
+for (j in 1:nrow(uf.dat.sum)) {
+  if (duplicated(subset(uf.dat.sum, select=c(year, group)))[j]) { ##if this group and year already appeared
+    uf.dat.sum$survey[j]<-uf.dat.sum$survey[j-1]+1
+  }
+}
 
 #dnm_data<-subset(uf.dat.sum, group == "Eden Landing")
 dnm_data<-uf.dat.sum
@@ -246,6 +292,12 @@ vis <- ggplot(data = dnm_data, aes(x = year, y = n))
 vis <- vis + geom_point()
 vis <- vis + facet_grid(facets = dnm_data$group~., scales = "free_y")
 vis
+
+##plot of counts across years for particular ponds
+fig <- ggplot(data = subset(dnm_data, group == "Whales Tail"), aes(x = Date, y = n))
+fig <- fig + geom_point()
+fig <- fig + facet_wrap(~year, scales = "free_x")
+fig
 
 ##visual data for known-fate birds
 j<-0
@@ -310,22 +362,36 @@ for (j in 1:length(unique(kf.dat$id))) {
   id.temp<-unique(kf.dat$id)[j]
   bday.temp<-subset(kf.dat, id==id.temp & Type=="capture" & Age==4)$Date
   last.temp<-max(kf.dat$Date[which(kf.dat$id==id.temp)])
-  if (length(bday.temp)==0) {next}
+  if (length(bday.temp)==0) {next} ##if the bird was not captured as a chick or doesn't have a capture date then move to next bird
   dur.temp<-as.numeric(last.temp-bday.temp)
-  if (dur.temp==0) {next}
   fate.temp<-subset(kf.dat, id==id.temp & Date==last.temp)$CH
   fate.surv.temp<-ifelse(fate.temp==1, 0, 1) ##if fate is 0, then make it 1, else make it 0
   
-  if (is.na(subset(kf.dat, id==id.temp)$Nest.Group[1])) {next} ##fit the survival curve for known broods only
-  if (dur.temp>31) {next} ##fit the survival curve only until the age of fledging
+  #if (dur.temp==0) {next} ##if the bird was only observed at tagging, drop it
+  #if (dur.temp==0) {dur.temp<-7; fate.surv.temp<-1} ##if bird was never observed after tagging, assume it died within a week
+  ##default assumption is that bird was observed alive on day 0
+  year.temp<-as.numeric(format(bday.temp, "%Y"))
+  brood.temp<-subset(kf.dat, id==id.temp)$Nest.Group[1]
+  pond.temp<-subset(kf.dat, id==id.temp & Date==bday.temp & Type=="capture")$Location
   
-  surv.dat<-rbind(surv.dat, data.frame(duration=dur.temp, fate=fate.surv.temp))
+  if (dur.temp>31) {dur.temp<-31; fate.surv.temp<-0} ##if the bird was observed after fledging, assume it was alive at fledging and make its last observation at 31 days
+  
+
+  surv.dat<-rbind(surv.dat, data.frame(id=id.temp, year=year.temp, duration=dur.temp, fate=fate.surv.temp, pond=pond.temp, brood=brood.temp))
 }
 
+##SUBSET DATA
+
+surv.dat<-subset(surv.dat, duration == 31 | fate == 1) ##use data where the bird either died or was tracked a full 31 days
+#surv.dat<-subset(surv.dat, is.na(brood)==F) ## take only birds with known broods
+surv.dat<-subset(surv.dat, pond %in% c("E14","E6B","E8", "E16B")) ##take only certain locations
+surv.dat<-subset(surv.dat, year %in% c(2016))
+
+##SURVIVAL MODEL
 surv.object <- Surv(time = surv.dat$duration, event = surv.dat$fate)
 
-surv.fitted.Motulsky <- survfit(surv.object ~ 1, conf.type = "log-log")
-plot(surv.fitted.Motulsky)
+#surv.fitted.Motulsky <- survfit(surv.object ~ 1, conf.type = "log-log")
+#plot(surv.fitted.Motulsky)
 
 surv.fitted.default <- survfit(surv.object ~ 1)
 plot(surv.fitted.default, xlab="Days", ylab="Proportion surviving")
@@ -335,3 +401,72 @@ plot(surv.fitted.default, xlab="Days", ylab="Proportion surviving")
 
 print(str_c("The proportion of chicks that survive to day ", last(surv.fitted.default$time)," is ", round(last(surv.fitted.default$surv),2), " (", round(last(surv.fitted.default$upper),2), ", ", round(last(surv.fitted.default$lower),2),")"))
 
+par(mfrow=c(2,2), mar=c(4,4,3,1))
+for (j in 1:length(unique(surv.dat$pond))) {
+  pond.temp<-unique(surv.dat$pond)[j]
+  dat.temp<-subset(surv.dat, pond==pond.temp)
+  
+  surv.object <- Surv(time = dat.temp$duration, event = dat.temp$fate)
+  surv.fitted.default <- survfit(surv.object ~ 1)
+  plot(surv.fitted.default, xlab="Days", ylab="Proportion surviving", main=pond.temp)
+  text(x=5, y=0.2, labels = str_c("n alive = ", length(which(dat.temp$fate==0))))
+  text(x=5, y=0.1, labels = str_c("n dead = ", length(which(dat.temp$fate==1))))
+  mtext(text = print(str_c("Prop survive to day ", last(surv.fitted.default$time)," is ", round(last(surv.fitted.default$surv),2), " (", round(last(surv.fitted.default$upper),2), ", ", round(last(surv.fitted.default$lower),2),")")), side=3)
+}
+par(mfrow=c(1,1))
+
+##CONS: assumes perfect detection rate. very sensitive to not detecting deaths. Curve only drops if death is detected, so need to make these plots for birds with confident fates
+
+##can compare survival curves across sites and years: https://rpubs.com/brouwern/MotulskyCh5
+
+##this approach is good for E14; good tracking of broods over time
+
+###  N-MIXTURE MODEL  ###
+head(uf.dat.sum)
+
+#install.packages("jointNmix")
+library(jointNmix)
+
+##SIMULATION
+## simulating data with negative binomial latent abundances
+R <- 10 # sites
+T <- 10 # time occasions
+lambda <- 5 # abundance parameter
+p <- .3 # probability of detection
+phi <- 1 # dispersion parameter
+set.seed(1234); Ni <- rnbinom(R, mu=lambda, size=phi) # latent abundances
+y <- matrix(0, ncol=T, nrow=R)
+set.seed(1234); for(i in 1:R) y[,i] <- rbinom(T, Ni, p) # observed abundances
+
+##y is a matrix. rows are sites. columns are time. values are counts
+##REAL DATA
+data<-subset(uf.dat.sum, year==2016, select=c(group, survey, n))
+y<-spread(data, survey, n)
+y<-y[-which(is.na(y[,8])),c(1:8)] ##get rid of NA values (by cutting out some data)
+groups.temp<-y$group
+y<-as.matrix(subset(y, select=-group))
+R<-nrow(y)
+T<-ncol(y)
+
+## fitting the Poisson N-mixture model
+#fitp <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="P", K=25)
+fitp <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="P", K=max(y,na.rm=T)+100)
+
+## fitting the negative binomial N-mixture model
+#fitnb <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="NB", K=25)
+fitnb <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="NB", K=max(y,na.rm=T)+100)
+
+## likelihood-ratio test between Poisson and negbin models
+anova(fitp, fitnb)
+
+## comparing using AIC
+lapply(list(fitp, fitnb), AIC)
+
+## conditional posterior probability functions for abundances
+plot(fitnb, posterior = TRUE)
+
+##p is probability of detection
+##lambda is abundance parameter
+##theta is dispersion parameter
+fitnb
+##https://rdrr.io/cran/jointNmix/man/Nmix.html
