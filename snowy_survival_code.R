@@ -22,16 +22,16 @@ library(stringr) ##required for string processing
 library(RODBC) ##required to pull data from access databases
 
 ##SIMULATE DATA
-# num_kf Target numer of known-fate individuals in the group
+# num_kf Target number of known-fate individuals in the group
 # num_years Number of years for the study
 # num_surveys Number of surveys within each year
-# recruit_rate Average recruitment rate
+# recruit_rate Average recruitment rate = additions of individuals to group
 # init_rate Initial average group size in year 1 survey 1.
 # survival_dnm Survival rate for non-kf individuals.
 # survival_kf Survival rate for KF individuals.
 # perfect_survey_rate The probability that all non-kf individuals are observed in a survey.
 # detection The detection probability for abundance surveys.
-sim.dat<-sim_data(num_kf = 5, num_years = 27, num_surveys = 10, recruit_rate = 5, init_rate = 15, survival_dnm = .90, survival_kf = .90, perfect_survey_rate = .3, detection = .7)
+sim.dat<-sim_data(num_kf = 10, num_years = 5, num_surveys = 7, recruit_rate = 5, init_rate = 15, survival_dnm = .70, survival_kf = .70, perfect_survey_rate = .3, detection = .65)
 
 kf_data<-sim.dat$kf_data
 dnm_data<-sim.dat$dnm_data
@@ -111,7 +111,7 @@ pond.groups<-read.csv("pond names.csv")
 kf.dat<-dplyr::left_join(x=kf.dat, y=subset(pond.groups, select=c(Pond, Pond.Group)), by = c("Location" = "Pond"))
 
 
-##ADD CHICKS PRESUMED DEAD
+##ADD CHICKS PRESUMED DEAD ###
 broods<-read.csv("Brood Groups.csv")
 broods<-broods[,1:3]
 
@@ -140,12 +140,15 @@ for (j in 1:length(unique(kf.dat$id))) { ##for each bird
 ##their group is their first CAPTURE location
 kf.dat$group<-rep(NA, nrow(kf.dat))
 for (j in 1:length(unique(kf.dat$id))) {
-  kf.dat$group[which(kf.dat$id==unique(kf.dat$id)[j])]<-as.character(kf.dat$Location[which(kf.dat$id == unique(kf.dat$id)[j] & kf.dat$Type=="capture")][1])
+  kf.dat$group[which(kf.dat$id==unique(kf.dat$id)[j])]<-as.character(kf.dat$Pond.Group[which(kf.dat$id == unique(kf.dat$id)[j] & kf.dat$Type=="capture")][1])
 }
 
 ##create kf_data (known fate) with colnames id, year, survey, CH (1=alive, 0=dead)
 #kf.dat<-subset(kf.dat, select=c(id, year, Date, CH, Location))
 #kf.dat<-subset(kf.dat, select=c(id, year, Date, CH, Location), subset= str_detect(string = kf.dat$Location, pattern = "^E") ) ##select only sites in eden landing
+
+##remove birds with no group
+kf.dat<-subset(kf.dat, group!="")
 
 ##order data by group and then time
 kf.dat<-kf.dat[order(kf.dat$group, kf.dat$id, kf.dat$Date),]; head(kf.dat)
@@ -167,11 +170,11 @@ wb<-"S:/Science/Waterbird/Databases - enter data here!/SNPL/SNPL.accdb"  ##file 
 #wb<- "C:/Users/max/Desktop/Tarjan/Science/Plover/SNPL copy 22Sep2017.accdb" #filepath for work locally on Birds25
 con<-odbcConnectAccess2007(wb) ##open connection to database
 
-qry<-"SELECT year(i.Date) AS year, i.Date, s.SurveyID AS survey, 0 AS perfect_survey, 0 AS R, s.TotalObserved AS n, p.Complex AS [complex], p.PondNumber
+qry<-"SELECT year(i.Date) AS year, i.Date, s.SurveyID AS survey, 0 AS perfect_survey, 0 AS R, s.TotalObserved AS n, p.Complex AS [complex], p.PondNumber, IIF(IsNull(NumMales), 0, NumMales) + IIF(IsNull(NumFemales), 0, NumFemales) + IIF(IsNull(NumUnknown), 0, NumUnknown) + IIF(IsNull(NumJuveniles), 0, NumJuveniles) AS adults, AgeSexStatus
   FROM ([SNPL SURVEY] AS s
   LEFT OUTER JOIN [SNPL Observers Info] AS i ON s.SurveyID = i.SurveyID)
   LEFT OUTER JOIN LookupPond AS p ON s.PondNumber = p.PondNumber
-  WHERE p.Complex <> 'Error With Record' "
+  WHERE p.Complex <> 'Error With Record'"
 
 uf.dat<-sqlQuery(con, qry); head(uf.dat) ##import the queried table
 
@@ -179,9 +182,16 @@ uf.dat<-sqlQuery(con, qry); head(uf.dat) ##import the queried table
 odbcCloseAll()
 
 
+##EXCLUDE CHICK COUNTS; ONLY ADULTS ##
+uf.dat<-subset(uf.dat, AgeSexStatus %in% c("F", "J", "M", "None", "U", "X")) ##exclude counts of chicks
+uf.dat$adults2<-ifelse(uf.dat$AgeSexStatus =="X", uf.dat$adults, uf.dat$n)
+uf.dat$n<-uf.dat$adults2
+uf.dat<-subset(uf.dat, select=-c(adults,AgeSexStatus, adults2))
+
+
 ##clean up data
 ##remove nonsensical year
-#uf.dat.sum<-subset(uf.dat.sum, year > 1980)
+uf.dat<-subset(uf.dat, year > 1980 & year < 2018)
 
 ##restrict surveys to "window surveys" when only reproductive individuals are present (ie exclude counts of migratory birds)
 window.dates<-read.csv("SNPL Breeding Window Dates.csv")
@@ -244,35 +254,47 @@ uf.dat<-dplyr::left_join(x=uf.dat, y=subset(pond.groups, select=c(Pond, Pond.Gro
 #names(uf.dat.sum)[length(uf.dat.sum)]<-"n"
 #head(uf.dat.sum)
 
+## ADD SURVEYS BASED ON 2-WEEK INTERVALS ##
+uf.dat$survey<-ifelse(chron::days(uf.dat$Date)< 16, str_c(uf.dat$year,".", uf.dat$month, ".1"), str_c(uf.dat$year,".", uf.dat$month, ".2"))
+
 ##ALTERNATIVE TO GROUP BY WEEK
 uf.dat.wk<-dim(0)
 for (j in 1:length(unique(uf.dat$Pond.Group))) {
   dat.temp<-subset(uf.dat, Pond.Group==unique(uf.dat$Pond.Group)[j]) ##get data for a given group
   
-  ## SUM BY POND
+  ## SUM BY POND FOR EACH DATE
   
   dat.temp<-dat.temp %>% group_by(Date, PondNumber) %>% mutate(pond.date.n=sum(n)) %>% data.frame() #sum n by pond
   dat.temp<-subset(dat.temp, select=-n) ##remove old n before summarized
   dat.temp<-unique(dat.temp) #remove duplicates
+  
+  ## AVERAGE COUNTS FOR MULTIPLE DATES WITHIN THE SAME SURVEY
+  
+  dat.temp<-dat.temp %>% group_by(survey, PondNumber) %>% mutate(pond.survey.n=round(mean(pond.date.n, na.rm=T), 0)) %>% data.frame()
+  dat.temp<-subset(dat.temp, select=-c(pond.date.n, Date)) ##remove old n before summarized
+  dat.temp<-unique(dat.temp) #remove duplicates
+  
+  
   pond.count<-length(unique(dat.temp$PondNumber)) ##get unique number of ponds
-  dat.temp<-spread(dat.temp, PondNumber, pond.date.n)
+  dat.temp<-spread(dat.temp, PondNumber, pond.survey.n)
   
   ## SUM BY POND GROUP
   
-  ##get the sum of the counts for all ponds in the pond group. returns NA if a count is missing for a pond on that date
+  ##get the sum of the counts for all ponds in the pond group. note that not all ponds were necessarily counted on each date
+  ##spread function above allows us to change NA.RM to F if want to know where we are missing counts for some ponds
   if(pond.count>1) {
     dat.temp$n<-apply(dat.temp[,(ncol(dat.temp)-pond.count+1):ncol(dat.temp)], FUN=sum, na.rm=T, MARGIN = 1)
   } else {
     dat.temp$n<-last(dat.temp)
   }
   
-  dat.temp<-subset(dat.temp, select=c(year, Date, perfect_survey, R, month, Pond.Group, n))
+  dat.temp<-subset(dat.temp, select=c(year, month, survey, perfect_survey, R, Pond.Group, n))
   uf.dat.wk<-rbind(uf.dat.wk, dat.temp)
 }
 ##take the max if more than one count for each date
-uf.dat.wk<-uf.dat.wk %>% group_by(Date, Pond.Group) %>% mutate(n.max=max(n)) %>% data.frame()
-uf.dat.wk$n<-uf.dat.wk$n.max; uf.dat.wk<-subset(uf.dat.wk, select= -n.max) ##replace n with n.max and remove duplicates
-uf.dat.wk<-uf.dat.wk[which(duplicated(uf.dat.wk)==F),]
+#uf.dat.wk<-uf.dat.wk %>% group_by(survey, Pond.Group) %>% mutate(n.max=max(n)) %>% data.frame()
+#uf.dat.wk$n<-uf.dat.wk$n.max; uf.dat.wk<-subset(uf.dat.wk, select= -n.max) ##replace n with n.max and remove duplicates
+#uf.dat.wk<-uf.dat.wk[which(duplicated(uf.dat.wk)==F),]
 
 ##remove na counts
 uf.dat.wk<-subset(uf.dat.wk, is.na(n)==F)
@@ -282,7 +304,7 @@ uf.dat.sum<-uf.dat.wk
 uf.dat.sum$group<-uf.dat.sum$Pond.Group
 
 ##order by group, then time
-uf.dat.sum<-uf.dat.sum[order(uf.dat.sum$group, uf.dat.sum$Date),]; head(uf.dat.sum)
+uf.dat.sum<-uf.dat.sum[order(uf.dat.sum$group, uf.dat.sum$survey),]; head(uf.dat.sum)
 
 ##OVERWRITE WITH SEQUENTIAL SURVEY NUMBER; requires that the data are ordered by group and then by date
 ##ADD SURVEY NUMBER
@@ -306,7 +328,7 @@ vis <- vis + facet_grid(facets = dnm_data$group~., scales = "free_y")
 vis
 
 ##plot of counts across years for particular ponds
-fig <- ggplot(data = subset(dnm_data, group == "Whales Tail"), aes(x = Date, y = n))
+fig <- ggplot(data = subset(dnm_data, group == "Whales Tail"), aes(x = survey, y = n))
 fig <- fig + geom_point()
 fig <- fig + facet_wrap(~year, scales = "free_x")
 fig
@@ -397,7 +419,7 @@ for (j in 1:length(unique(kf.dat$id))) {
 surv.dat<-subset(surv.dat, duration == 31 | fate == 1) ##use data where the bird either died or was tracked a full 31 days
 #surv.dat<-subset(surv.dat, is.na(brood)==F) ## take only birds with known broods
 surv.dat<-subset(surv.dat, pond %in% c("E14","E6B","E8", "E16B")) ##take only certain locations
-surv.dat<-subset(surv.dat, year %in% c(2016))
+#surv.dat<-subset(surv.dat, year %in% c(2016))
 
 ##SURVIVAL MODEL
 surv.object <- Surv(time = surv.dat$duration, event = surv.dat$fate)

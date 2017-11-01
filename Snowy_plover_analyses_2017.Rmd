@@ -11,8 +11,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 #Draft Report prepared for the Bay Delta USFWS
 #Introduction
+
+Average juvenile survival (i.e. the probability of fledging and surviving to first winter) across all sites was 0.188 (Hudgens et al 2014). 1.60 male chicks per male. Adult survival 0.71-0.60. Juvenile survival 0.19. Detection rate was 0.65 in SF Bay.
+
 #Methods
 We used known-fate data to fit parameters for a known-fate analysis and an n-mixture model to fit data for counts that represent birds with unknown fates. Parameters from both sets of data and approaches were estimated simultaneously. The estimates with the most support according to both analyses are reported.
+
+Detection probability for SF Bay was 0.65 (Hudgens et al. 2014).
 
 #Results
 Survival and recruitment estimates
@@ -38,3 +43,5 @@ cat(plogis(par[3]), "(", plogis(par[3]-2*se[3]), ",",plogis(par[3]+2*se[3]), ")\
 ```
 
 
+#Works Cited
+Hudgens, BH, Eberhart-Phillips L, Stenzel L, Burns C, Colwell M and Page G (2014). Population Viability Analysis of the Western Snowy Plover. Report prepared for the U.S. Fish and Wildlife Service. Arcata, CA.
