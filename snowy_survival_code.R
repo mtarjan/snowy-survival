@@ -234,7 +234,7 @@ for (j in 1:nrow(window.dates)) {
 
 ###ALTERNATIVE: RESTRICT TO MAY AND JUNE
 uf.dat$month<-as.numeric(format(uf.dat$Date, "%m"))
-uf.dat<-subset(uf.dat, month %in% c(5,6) & PondNumber %in% read.csv("Ponds Surveyed Weekly.csv", header=F)[,1] & year>2013) ##use data in May and June from ponds that are surveyed weekly; also choose years when groups were tracked closely
+uf.dat<-subset(uf.dat, month %in% c(5,6) & PondNumber %in% read.csv("Ponds Surveyed Weekly.csv", header=F)[,1] & year>2006) ##use data in May and June from ponds that are surveyed weekly; also choose years when groups were tracked closely
 
 
 ##FIGURE OUT WHAT LOCATIONS WE SHOULD MAKE THE "GROUP" VARIABLE
@@ -328,9 +328,12 @@ vis <- vis + facet_grid(facets = dnm_data$group~., scales = "free_y")
 vis
 
 ##plot of counts across years for particular ponds
-fig <- ggplot(data = subset(dnm_data, group == "Whales Tail"), aes(x = survey, y = n))
+j<-0
+j<-j+1
+fig <- ggplot(data = subset(dnm_data, group == unique(dnm_data$group)[j]), aes(x = survey, y = n))
 fig <- fig + geom_point()
 fig <- fig + facet_wrap(~year, scales = "free_x")
+fig <- fig + xlab(label = str_c(unique(dnm_data$group)[j], " survey number"))
 fig
 
 ##visual data for known-fate birds
@@ -474,9 +477,9 @@ set.seed(1234); for(i in 1:R) y[,i] <- rbinom(T, Ni, p) # observed abundances
 
 ##y is a matrix. rows are sites. columns are time. values are counts
 ##REAL DATA
-data<-subset(uf.dat.sum, year==2016, select=c(group, survey, n))
+data<-subset(uf.dat.sum, year==2017, select=c(group, survey, n))
 y<-spread(data, survey, n)
-y<-y[-which(is.na(y[,8])),c(1:8)] ##get rid of NA values (by cutting out some data)
+y<-y[-which(is.na(y[,5])),c(1:5)] ##get rid of NA values (by cutting out some data)
 groups.temp<-y$group
 y<-as.matrix(subset(y, select=-group))
 R<-nrow(y)
@@ -497,7 +500,7 @@ anova(fitp, fitnb)
 lapply(list(fitp, fitnb), AIC)
 
 ## conditional posterior probability functions for abundances
-plot(fitnb, posterior = TRUE)
+plot(fitp, posterior = TRUE)
 
 ##p is probability of detection
 ##lambda is abundance parameter
@@ -506,3 +509,33 @@ fitnb
 ##https://rdrr.io/cran/jointNmix/man/Nmix.html
 
 cbind(as.character(groups.temp),1:length(groups.temp))
+
+##shows the numbers relative to the maximum number that a site can sustain
+
+## GET POP SIZE ESTIMATES FOR EACH GROUP AND YEAR ##
+fitps<-list()
+h<-0
+for (j in 13:length(unique(uf.dat.sum$group))) {
+  for (i in 10:length(unique(uf.dat.sum$year))) {
+    h<-h+1
+    group.temp<-unique(uf.dat.sum$group)[j]
+    year.temp<-unique(uf.dat.sum$year)[i]
+    data.temp<-subset(uf.dat.sum, group==group.temp & year==year.temp, select=c(group, survey, n))
+    if (nrow(data.temp)==0) {next}
+    
+    y<-spread(data.temp, survey, n)
+    #y<-y[-which(is.na(y[,5])),c(1:5)] ##get rid of NA values (by cutting out some data) ## NEED TO FIGURE OUT BETTER WAY TO AVOID NAS
+    groups.temp<-y$group
+    y<-as.matrix(subset(y, select=-group))
+    R<-nrow(y)
+    T<-ncol(y)
+    
+    fitp <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="P", K=max(y,na.rm=T)+100)
+    fitps[[h]]<-fitp
+  }
+} 
+
+plot(fitps[[1]], posterior=T)
+
+## ANOTHER N MIXTURE MODEL ##
+##https://cran.r-project.org/web/packages/unmarked/unmarked.pdf pcount function
