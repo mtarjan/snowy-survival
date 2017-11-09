@@ -12,12 +12,21 @@ knitr::opts_chunk$set(echo = TRUE)
 #Draft Report prepared for the Bay Delta USFWS
 #Introduction
 
-Average juvenile survival (i.e. the probability of fledging and surviving to first winter) across all sites was 0.188 (Hudgens et al 2014). 1.60 male chicks per male. Adult survival 0.71-0.60. Juvenile survival 0.19. Detection rate was 0.65 in SF Bay.
+Average juvenile survival (i.e. the probability of fledging and surviving to first winter) across all sites was 0.188 (Hudgens et al 2014). 1.60 male chicks per male. Adult survival 0.71-0.60. Juvenile survival 0.19. Detection probability for SF Bay was 0.65 (Hudgens et al. 2014).
 
 #Methods
-We used known-fate data to fit parameters for a known-fate analysis and an n-mixture model to fit data for counts that represent birds with unknown fates. Parameters from both sets of data and approaches were estimated simultaneously. The estimates with the most support according to both analyses are reported.
+##Fledging rate
+We estimated the fleding rate by tracking the survival of chicks banded within two days after hatching. We restricted our analysis to chicks at sites that were visited at least once a week. These sites were monitored closely, so chicks that went missing before fledging (31 days) were presumed dead. We assumed that their death date fell within a week of the last date they were observed. We randomly selected the exact date within the week following their last observation. Birds that were observed in subsequent years as adults were marked as fledged. The rate of observing adult birds that went missing as chicks is low (INSERT RATE), so we presume that the underestimate in fledge rate caused by detection rate is relatively low.
 
-Detection probability for SF Bay was 0.65 (Hudgens et al. 2014).
+We used a survival analysis (survival package in R) to estimate fleding rate and survival over the first 31 days after hatching.
+
+##Population growth
+We estimated population sizes of breeding adults and detection probabilities using n mixture models and counts of untagged adult birds. All adult birds were counted at least once a week at each site. We used the maximum count if multiple counts existed in a week. Counts occurred during the breeding season (May to June), and we assumed that counts represent breeding individuals and not migrants.  
+
+Adult birds move between sites daily when foraging, so we estimated population size at the complex level. If birds move between complexes, this will cause inflated variability in counts (violoating the assumption that all birds counted are within the breeding population for that site) and would lead to underestimates in detection probability and population size.
+
+N mixture models estimate the population size as a whole for birds that have been counted at multiple sites. We determined that the population was at the complex level, and that the ponds would serve as sites.
+
 
 #Results
 Survival and recruitment estimates

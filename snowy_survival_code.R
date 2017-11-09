@@ -21,6 +21,8 @@ library(stringr) ##required for string processing
 
 library(RODBC) ##required to pull data from access databases
 
+library(lubridate)
+
 ##SIMULATE DATA
 # num_kf Target number of known-fate individuals in the group
 # num_years Number of years for the study
@@ -112,6 +114,7 @@ kf.dat<-dplyr::left_join(x=kf.dat, y=subset(pond.groups, select=c(Pond, Pond.Gro
 
 
 ##ADD CHICKS PRESUMED DEAD ###
+##change to add assumption that any chick not seen alive is dead by fledging. but when do we assume they died? randomly assign them a time that is within the distribution of deaths for known-dead individuals. or is it a better assumption that they were dead the day after they were last observed?? that's maybe a better assumption. one week after they were last observed
 broods<-read.csv("Brood Groups.csv")
 broods<-broods[,1:3]
 
@@ -194,54 +197,76 @@ uf.dat<-subset(uf.dat, select=-c(adults,AgeSexStatus, adults2))
 uf.dat<-subset(uf.dat, year > 1980 & year < 2018)
 
 ##restrict surveys to "window surveys" when only reproductive individuals are present (ie exclude counts of migratory birds)
-window.dates<-read.csv("SNPL Breeding Window Dates.csv")
-window.dates$start.date<-as.Date(window.dates$start.date, "%m/%d/%Y")
-window.dates$end.date<-as.Date(window.dates$end.date, "%m/%d/%Y")
+#window.dates<-read.csv("SNPL Breeding Window Dates.csv")
+#window.dates$start.date<-as.Date(window.dates$start.date, "%m/%d/%Y")
+#window.dates$end.date<-as.Date(window.dates$end.date, "%m/%d/%Y")
 
-uf.dat.win<-dim(0) ##counts of untagged indivs during the "window surveys" for each year
-for (j in 1:nrow(window.dates)) {
-  year.temp<-window.dates$Year[j]
-  dat.temp<-subset(uf.dat, year==year.temp)
-  win.temp<-window.dates[j,]
-  out.temp<- subset(dat.temp, as.Date(dat.temp$Date) >= win.temp$start.date & as.Date(dat.temp$Date) <= win.temp$end.date)
+#uf.dat.win<-dim(0) ##counts of untagged indivs during the "window surveys" for each year
+#for (j in 1:nrow(window.dates)) {
+#  year.temp<-window.dates$Year[j]
+#  dat.temp<-subset(uf.dat, year==year.temp)
+#  win.temp<-window.dates[j,]
+#  out.temp<- subset(dat.temp, as.Date(dat.temp$Date) >= win.temp$start.date & as.Date(dat.temp$Date) <= win.temp$end.date)
   
-  if (nrow(out.temp)>0) {
+#  if (nrow(out.temp)>0) {
     ##for survey dates that apply to all locations
-    if (win.temp$locations=="all") {
-      uf.dat.win<-rbind(uf.dat.win, out.temp)
-    }
+#    if (win.temp$locations=="all") {
+#      uf.dat.win<-rbind(uf.dat.win, out.temp)
+#    }
     
     ##for survey windows that apply to select locations
-    if (win.temp$locations=="Hayward") {
-      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, complex=="Hayward"))
-    }
+#    if (win.temp$locations=="Hayward") {
+#      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, complex=="Hayward"))
+#    }
     
-    if (win.temp$locations=="Hayward, Napa") {
-      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, complex %in% c("Hayward", "Napa")))
-    }
+#    if (win.temp$locations=="Hayward, Napa") {
+#      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, complex %in% c("Hayward", "Napa")))
+#    }
     
-    if (win.temp$locations=="all-Hayward") {
-      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, complex !=  "Hayward"))
-    }
+#    if (win.temp$locations=="all-Hayward") {
+#      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, complex !=  "Hayward"))
+#    }
     
-    if (win.temp$locations=="all-Hayward, Napa") {
-      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, complex != "Hayward" & complex != "Napa"))
-    }
-  }
-}
+#    if (win.temp$locations=="all-Hayward, Napa") {
+#      uf.dat.win<-rbind(uf.dat.win, subset(out.temp, complex != "Hayward" & complex != "Napa"))
+#    }
+#  }
+#}
 
 #uf.dat<-uf.dat.win
 
 ###ALTERNATIVE: RESTRICT TO MAY AND JUNE
 uf.dat$month<-as.numeric(format(uf.dat$Date, "%m"))
-uf.dat<-subset(uf.dat, month %in% c(5,6) & PondNumber %in% read.csv("Ponds Surveyed Weekly.csv", header=F)[,1] & year>2006) ##use data in May and June from ponds that are surveyed weekly; also choose years when groups were tracked closely
+uf.dat$week<-as.numeric(week(uf.dat$Date))
+uf.dat$wday<-as.numeric(wday(uf.dat$Date))
+#uf.dat$wday<-wday(uf.dat$Date, label=T)
+#uf.dat<-subset(uf.dat, month %in% c(5,6) & PondNumber %in% read.csv("Ponds Surveyed Weekly.csv", header=F)[,1] & year>=2004) ##use data in May and June from ponds that are surveyed weekly; also choose years when groups were tracked closely
 
+dat.sub<-subset(uf.dat, year==3000)
+for (j in 2004:2017) {
+  ##find the first monday in May
+  year.temp<-j
+  for (i in 1:7) {
+    date.temp<-as.Date(str_c(year.temp, "-05-0", i), format="%Y-%m-%d")
+    if (wday(date.temp)==2) {first.mon<-date.temp; break}
+  }
+  ##find the last saturday in June
+  for (i in 30:22) {
+    date.temp<-as.Date(str_c(year.temp, "-06-", i), format="%Y-%m-%d")
+    if (wday(date.temp)==6) {last.sat<-date.temp; break}
+  }
+  
+  dat.sub.temp<-subset(uf.dat, Date >=first.mon & Date <=last.sat)
+  dat.sub<-rbind(dat.sub, dat.sub.temp)
+}
+
+uf.dat<-dat.sub
 
 ##FIGURE OUT WHAT LOCATIONS WE SHOULD MAKE THE "GROUP" VARIABLE
-#uf.dat$group<-uf.dat$complex
+uf.dat$group<-uf.dat$complex
 
 ##use Ben's groups
-uf.dat<-dplyr::left_join(x=uf.dat, y=subset(pond.groups, select=c(Pond, Pond.Group)), by = c("PondNumber" = "Pond"))
+#uf.dat<-dplyr::left_join(x=uf.dat, y=subset(pond.groups, select=c(Pond, Pond.Group)), by = c("PondNumber" = "Pond"))
 #uf.dat$group<-uf.dat$Pond.Group ##pond group as the location
 #uf.dat$group<-uf.dat$PondNumber ##ponds as their own location
 
@@ -255,12 +280,14 @@ uf.dat<-dplyr::left_join(x=uf.dat, y=subset(pond.groups, select=c(Pond, Pond.Gro
 #head(uf.dat.sum)
 
 ## ADD SURVEYS BASED ON 2-WEEK INTERVALS ##
-uf.dat$survey<-ifelse(chron::days(uf.dat$Date)< 16, str_c(uf.dat$year,".", uf.dat$month, ".1"), str_c(uf.dat$year,".", uf.dat$month, ".2"))
+#uf.dat$survey<-ifelse(chron::days(uf.dat$Date)< 16, str_c(uf.dat$year,".", uf.dat$month, ".1"), str_c(uf.dat$year,".", uf.dat$month, ".2"))
+
+uf.dat$survey<-str_c(uf.dat$year, ".", uf.dat$week)
 
 ##ALTERNATIVE TO GROUP BY WEEK
 uf.dat.wk<-dim(0)
-for (j in 1:length(unique(uf.dat$Pond.Group))) {
-  dat.temp<-subset(uf.dat, Pond.Group==unique(uf.dat$Pond.Group)[j]) ##get data for a given group
+for (j in 1:length(unique(uf.dat$group))) {
+  dat.temp<-subset(uf.dat, group==unique(uf.dat$group)[j]) ##get data for a given group
   
   ## SUM BY POND FOR EACH DATE
   
@@ -268,27 +295,31 @@ for (j in 1:length(unique(uf.dat$Pond.Group))) {
   dat.temp<-subset(dat.temp, select=-n) ##remove old n before summarized
   dat.temp<-unique(dat.temp) #remove duplicates
   
-  ## AVERAGE COUNTS FOR MULTIPLE DATES WITHIN THE SAME SURVEY
+  ## TAKE MAX COUNT FOR PONDS WITH MULTIPLE DATES WITHIN THE SAME SURVEY/WEEK
   
-  dat.temp<-dat.temp %>% group_by(survey, PondNumber) %>% mutate(pond.survey.n=round(mean(pond.date.n, na.rm=T), 0)) %>% data.frame()
-  dat.temp<-subset(dat.temp, select=-c(pond.date.n, Date)) ##remove old n before summarized
+  dat.temp<-dat.temp %>% group_by(survey, PondNumber) %>% mutate(pond.survey.n=max(pond.date.n, na.rm=T)) %>% data.frame()
+  dat.temp<-subset(dat.temp, select=-c(pond.date.n, Date, wday)) ##remove old n before summarized
   dat.temp<-unique(dat.temp) #remove duplicates
   
   
-  pond.count<-length(unique(dat.temp$PondNumber)) ##get unique number of ponds
-  dat.temp<-spread(dat.temp, PondNumber, pond.survey.n)
+  #pond.count<-length(unique(dat.temp$PondNumber)) ##get unique number of ponds
+  #dat.temp<-spread(dat.temp, PondNumber, pond.survey.n)
   
-  ## SUM BY POND GROUP
+  ## SUM BY GROUP
   
   ##get the sum of the counts for all ponds in the pond group. note that not all ponds were necessarily counted on each date
   ##spread function above allows us to change NA.RM to F if want to know where we are missing counts for some ponds
-  if(pond.count>1) {
-    dat.temp$n<-apply(dat.temp[,(ncol(dat.temp)-pond.count+1):ncol(dat.temp)], FUN=sum, na.rm=T, MARGIN = 1)
-  } else {
-    dat.temp$n<-last(dat.temp)
-  }
+  #if(pond.count>1) {
+  #  dat.temp$n<-apply(dat.temp[,(ncol(dat.temp)-pond.count+1):ncol(dat.temp)], FUN=sum, na.rm=T, MARGIN = 1)
+  #} else {
+  #  dat.temp$n<-last(dat.temp)
+  #}
   
-  dat.temp<-subset(dat.temp, select=c(year, month, survey, perfect_survey, R, Pond.Group, n))
+  dat.temp<-dat.temp %>% group_by(survey, group) %>% mutate(n=sum(pond.survey.n, na.rm=T)) %>% data.frame()
+  dat.temp<-subset(dat.temp, select=-c(pond.survey.n, PondNumber)) ##remove old n before summarized
+  dat.temp<-unique(dat.temp) #remove duplicates
+  
+  dat.temp<-subset(dat.temp, select=c(year, month, survey, perfect_survey, R, group, n))
   uf.dat.wk<-rbind(uf.dat.wk, dat.temp)
 }
 ##take the max if more than one count for each date
@@ -301,7 +332,7 @@ uf.dat.wk<-subset(uf.dat.wk, is.na(n)==F)
 
 uf.dat.sum<-uf.dat.wk
 
-uf.dat.sum$group<-uf.dat.sum$Pond.Group
+#uf.dat.sum$group<-uf.dat.sum$Pond.Group
 
 ##order by group, then time
 uf.dat.sum<-uf.dat.sum[order(uf.dat.sum$group, uf.dat.sum$survey),]; head(uf.dat.sum)
@@ -347,28 +378,28 @@ fplot
 ### Create list of fixed parameters
 ###
 
-fixed_list = list(
-  recruit=ifelse(dnm_data$year!=1 & dnm_data$survey==1, NA, 0),
-  detection=ifelse(dnm_data$perfect==1, 1, NA)
-)
+#fixed_list = list(
+#  recruit=ifelse(dnm_data$year!=1 & dnm_data$survey==1, NA, 0),
+#  detection=ifelse(dnm_data$perfect==1, 1, NA)
+#)
 
 ###
 ### Make likelihood function
 ### 
-lik.func <- make_ikfdnm_likelihood(survival=~1, recruit=~1, detection=~1, kf_survival_effects=NULL, fixed_list=fixed_list, kf_data=kf_data, dnm_data=dnm_data, N_max=400)
+#lik.func <- make_ikfdnm_likelihood(survival=~1, recruit=~1, detection=~1, kf_survival_effects=NULL, fixed_list=fixed_list, kf_data=kf_data, dnm_data=dnm_data, N_max=400)
 
 ###
 ### Optimize and obtain estimates and variance-covariance matrix
 ### 
 
-par_start=c(qlogis(0.95), log(4), qlogis(0.5))
+#par_start=c(qlogis(0.95), log(4), qlogis(0.5))
 #par_start=rep(0,3)
-lik.func(par_start)
+#lik.func(par_start)
 
 
-mle=optim(par_start, lik.func, method="BFGS", control=list(REPORT=1, trace=1), hessian=TRUE)
-par=mle$par
-se = sqrt(diag(2*solve(mle$hessian)))
+#mle=optim(par_start, lik.func, method="BFGS", control=list(REPORT=1, trace=1), hessian=TRUE)
+#par=mle$par
+#se = sqrt(diag(2*solve(mle$hessian)))
 
 
 ###
@@ -376,16 +407,16 @@ se = sqrt(diag(2*solve(mle$hessian)))
 ###
 
 # omega
-cat("Survival: \n")
-cat(plogis(par[1]), "(", plogis(par[1]-2*se[1]), ",",plogis(par[1]+2*se[1]), ")\n")
+#cat("Survival: \n")
+#cat(plogis(par[1]), "(", plogis(par[1]-2*se[1]), ",",plogis(par[1]+2*se[1]), ")\n")
 
 # gamma
-cat("Recruitment rate:")
-cat(exp(par[2]), "(", exp(par[2]-2*se[2]), ",",exp(par[2]+2*se[2]), ")\n")
+#cat("Recruitment rate:")
+#cat(exp(par[2]), "(", exp(par[2]-2*se[2]), ",",exp(par[2]+2*se[2]), ")\n")
 
 # p
-cat("Detection prob.:\n")
-cat(plogis(par[3]), "(", plogis(par[3]-2*se[3]), ",",plogis(par[3]+2*se[3]), ")\n")
+#cat("Detection prob.:\n")
+#cat(plogis(par[3]), "(", plogis(par[3]-2*se[3]), ",",plogis(par[3]+2*se[3]), ")\n")
 
 
 ### SURVIVAL ANALYSIS USING SURVIVAL PACKAGE ###
@@ -479,7 +510,10 @@ set.seed(1234); for(i in 1:R) y[,i] <- rbinom(T, Ni, p) # observed abundances
 ##REAL DATA
 data<-subset(uf.dat.sum, year==2017, select=c(group, survey, n))
 y<-spread(data, survey, n)
-y<-y[-which(is.na(y[,5])),c(1:5)] ##get rid of NA values (by cutting out some data)
+##excuse missing data in last column
+y<-y[,1:(ncol(y)-1)]
+##remove sites that don't have all data
+y<-y[complete.cases(y),]
 groups.temp<-y$group
 y<-as.matrix(subset(y, select=-group))
 R<-nrow(y)
@@ -487,11 +521,11 @@ T<-ncol(y)
 
 ## fitting the Poisson N-mixture model
 #fitp <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="P", K=25)
-fitp <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="P", K=max(y,na.rm=T)+100)
+fitp <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="P", K=max(y,na.rm=T)*5)
 
 ## fitting the negative binomial N-mixture model
 #fitnb <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="NB", K=25)
-fitnb <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="NB", K=max(y,na.rm=T)+100)
+fitnb <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="NB", K=max(y,na.rm=T)*5)
 
 ## likelihood-ratio test between Poisson and negbin models
 anova(fitp, fitnb)
@@ -500,7 +534,7 @@ anova(fitp, fitnb)
 lapply(list(fitp, fitnb), AIC)
 
 ## conditional posterior probability functions for abundances
-plot(fitp, posterior = TRUE)
+plot(fitnb, posterior = TRUE)
 
 ##p is probability of detection
 ##lambda is abundance parameter
@@ -513,29 +547,59 @@ cbind(as.character(groups.temp),1:length(groups.temp))
 ##shows the numbers relative to the maximum number that a site can sustain
 
 ## GET POP SIZE ESTIMATES FOR EACH GROUP AND YEAR ##
-fitps<-list()
+fits<-list()
 h<-0
-for (j in 13:length(unique(uf.dat.sum$group))) {
-  for (i in 10:length(unique(uf.dat.sum$year))) {
-    h<-h+1
-    group.temp<-unique(uf.dat.sum$group)[j]
+fit.est<-dim(0)
+#for (j in 10:length(unique(uf.dat.sum$group))) {
+  for (i in 1:length(unique(uf.dat.sum$year))) {
+    #group.temp<-unique(uf.dat.sum$group)[j]
     year.temp<-unique(uf.dat.sum$year)[i]
-    data.temp<-subset(uf.dat.sum, group==group.temp & year==year.temp, select=c(group, survey, n))
+    #data.temp<-subset(uf.dat.sum, group==group.temp & year==year.temp, select=c(group, survey, n))
+    data.temp<-subset(uf.dat.sum, year==year.temp, select=c(group, survey, n))
     if (nrow(data.temp)==0) {next}
     
     y<-spread(data.temp, survey, n)
-    #y<-y[-which(is.na(y[,5])),c(1:5)] ##get rid of NA values (by cutting out some data) ## NEED TO FIGURE OUT BETTER WAY TO AVOID NAS
+    if(ncol(y)==2) {next} ##move to next if only one count date
+    ##excuse missing data in last column
+    y<-y[,1:(ncol(y)-1)]
+    ##remove sites that don't have all data
+    y<-y[complete.cases(y),]
+    if (nrow(y)==1) {next} ##move to next if only one site
     groups.temp<-y$group
     y<-as.matrix(subset(y, select=-group))
     R<-nrow(y)
     T<-ncol(y)
     
-    fitp <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="P", K=max(y,na.rm=T)+100)
-    fitps[[h]]<-fitp
+    fitnb <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="NB", K=max(y,na.rm=T)*2)
+    h<-h+1
+    fits[[h]]<-fitnb
+    #print(fitnb)
+    
+    fit.est<-rbind(fit.est, data.frame(year=rep(year.temp, length(groups.temp)), group=as.character(groups.temp), group.num=c(1:length(groups.temp)), list.item=rep(h,length(groups.temp)), Ni=getranef.uniNmix(fitnb)$Ni1))
   }
-} 
+#} 
 
-plot(fitps[[1]], posterior=T)
+plot(fits[[1]], posterior=T)
+
+getranef.uniNmix(fits[[1]])
+coef(fits[[1]])
+
+##plot the estimates
+fig <- ggplot(data = fit.est, aes(x = year, y = Ni))
+fig <- fig + geom_point(color="blue")
+fig <- fig + geom_line(aes(color="model"))
+fig <- fig + geom_line(data=subset(uf.dat.sum, group %in% c("Eden Landing", "Warm Springs", "Ravenswood", "Alviso")) %>% group_by(year, group) %>% mutate(n.max=max(n, na.rm=T)) %>% data.frame(), aes(x=year, y=n.max, color="N max", linetype="N max"))
+fig <- fig + geom_line(data=subset(uf.dat.sum, group %in% c("Eden Landing", "Warm Springs", "Ravenswood", "Alviso")) %>% group_by(year, group) %>% mutate(n.mean=mean(n, na.rm=T)) %>% data.frame(), aes(x=year, y=n.mean, color="N mean"))
+fig <- fig + geom_point(data = subset(uf.dat.sum, group %in% c("Eden Landing", "Warm Springs", "Ravenswood", "Alviso")), aes(x = year, y = n), shape=1, color="black")
+
+fig <- fig + facet_wrap(~group, scales = "free_y")
+fig <- fig + labs(color="") + scale_color_manual(values = c("blue", "black", "black")) 
+fig <- fig + scale_linetype_manual(values = c("dashed", "dashed", "solid"))
+#fig <- fig + scale_shape_manual(values = c(2))
+fig <- fig + theme_bw()
+fig
+
+##get detection probability by dividing mean count by estimated pop size??
 
 ## ANOTHER N MIXTURE MODEL ##
 ##https://cran.r-project.org/web/packages/unmarked/unmarked.pdf pcount function
