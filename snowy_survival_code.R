@@ -597,9 +597,12 @@ fig <- fig + labs(color="") + scale_color_manual(values = c("blue", "black", "bl
 fig <- fig + scale_linetype_manual(values = c("dashed", "dashed", "solid"))
 #fig <- fig + scale_shape_manual(values = c(2))
 fig <- fig + theme_bw()
+fig <- fig + scale_x_continuous(breaks=seq(min(uf.dat.sum$year),max(uf.dat.sum$year), 2), expand=c(0.05,0))
 fig
 
 ##get detection probability by dividing mean count by estimated pop size??
 
 ## ANOTHER N MIXTURE MODEL ##
 ##https://cran.r-project.org/web/packages/unmarked/unmarked.pdf pcount function
+
+##read unmarked paper
