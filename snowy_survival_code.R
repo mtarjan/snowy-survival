@@ -425,32 +425,36 @@ fplot
 library(survival)
 
 ##get time elapsed from first to last date as numeric (capture to last resight) and fate (in this case 1 is dead and 0 is alive)
+##ASSUME DEAD IF NEVER SEEN AFTER BANDING A CHICK##
 surv.dat<-dim(0)
+ticker<-0
+ticker.time<-365
 for (j in 1:length(unique(kf.dat$id))) {
   id.temp<-unique(kf.dat$id)[j]
   bday.temp<-subset(kf.dat, id==id.temp & Type=="capture" & Age==4)$Date
   last.temp<-max(kf.dat$Date[which(kf.dat$id==id.temp)])
   if (length(bday.temp)==0) {next} ##if the bird was not captured as a chick or doesn't have a capture date then move to next bird
   dur.temp<-as.numeric(last.temp-bday.temp)
+  if (dur.temp>ticker.time) {ticker<-ticker+1}
   fate.temp<-subset(kf.dat, id==id.temp & Date==last.temp)$CH
   fate.surv.temp<-ifelse(fate.temp==1, 0, 1) ##if fate is 0, then make it 1, else make it 0
   
-  #if (dur.temp==0) {next} ##if the bird was only observed at tagging, drop it
-  #if (dur.temp==0) {dur.temp<-7; fate.surv.temp<-1} ##if bird was never observed after tagging, assume it died within a week
-  ##default assumption is that bird was observed alive on day 0
   year.temp<-as.numeric(format(bday.temp, "%Y"))
-  brood.temp<-subset(kf.dat, id==id.temp)$Nest.Group[1]
+  #brood.temp<-subset(kf.dat, id==id.temp)$Nest.Group[1]
   pond.temp<-subset(kf.dat, id==id.temp & Date==bday.temp & Type=="capture")$Location
   
   if (dur.temp>31) {dur.temp<-31; fate.surv.temp<-0} ##if the bird was observed after fledging, assume it was alive at fledging and make its last observation at 31 days
+  if (dur.temp<31-7) {dur.temp<-dur.temp+floor(runif(n = 1, min=1, max=7)); fate.surv.temp<-1} ##if the bird was not observed in the last week before fledging, assume it died on a random day within a week of its last observation
   
 
-  surv.dat<-rbind(surv.dat, data.frame(id=id.temp, year=year.temp, duration=dur.temp, fate=fate.surv.temp, pond=pond.temp, brood=brood.temp))
+  surv.dat<-rbind(surv.dat, data.frame(id=id.temp, year=year.temp, duration=dur.temp, fate=fate.surv.temp, pond=pond.temp))
 }
+
+print(str_c("proportion surviving to ", ticker.time, " days")); round(ticker/nrow(surv.dat),2)
 
 ##SUBSET DATA
 
-surv.dat<-subset(surv.dat, duration == 31 | fate == 1) ##use data where the bird either died or was tracked a full 31 days
+#surv.dat<-subset(surv.dat, duration == 31 | fate == 1) ##use data where the bird either died or was tracked a full 31 days
 #surv.dat<-subset(surv.dat, is.na(brood)==F) ## take only birds with known broods
 surv.dat<-subset(surv.dat, pond %in% c("E14","E6B","E8", "E16B")) ##take only certain locations
 #surv.dat<-subset(surv.dat, year %in% c(2016))
@@ -473,6 +477,7 @@ par(mfrow=c(2,2), mar=c(4,4,3,1))
 for (j in 1:length(unique(surv.dat$pond))) {
   pond.temp<-unique(surv.dat$pond)[j]
   dat.temp<-subset(surv.dat, pond==pond.temp)
+  if (nrow(dat.temp)==0) {next}
   
   surv.object <- Surv(time = dat.temp$duration, event = dat.temp$fate)
   surv.fitted.default <- survfit(surv.object ~ 1)
@@ -520,85 +525,85 @@ R<-nrow(y)
 T<-ncol(y)
 
 ## fitting the Poisson N-mixture model
-#fitp <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="P", K=25)
-fitp <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="P", K=max(y,na.rm=T)*5)
+##fitp <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="P", K=25)
+#fitp <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="P", K=max(y,na.rm=T)*5)
 
 ## fitting the negative binomial N-mixture model
-#fitnb <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="NB", K=25)
-fitnb <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="NB", K=max(y,na.rm=T)*5)
+##fitnb <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="NB", K=25)
+#fitnb <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="NB", K=max(y,na.rm=T)*5)
 
 ## likelihood-ratio test between Poisson and negbin models
-anova(fitp, fitnb)
+#anova(fitp, fitnb)
 
 ## comparing using AIC
-lapply(list(fitp, fitnb), AIC)
+#lapply(list(fitp, fitnb), AIC)
 
 ## conditional posterior probability functions for abundances
-plot(fitnb, posterior = TRUE)
+#plot(fitnb, posterior = TRUE)
 
 ##p is probability of detection
 ##lambda is abundance parameter
 ##theta is dispersion parameter
-fitnb
+#fitnb
 ##https://rdrr.io/cran/jointNmix/man/Nmix.html
 
-cbind(as.character(groups.temp),1:length(groups.temp))
+#cbind(as.character(groups.temp),1:length(groups.temp))
 
 ##shows the numbers relative to the maximum number that a site can sustain
 
 ## GET POP SIZE ESTIMATES FOR EACH GROUP AND YEAR ##
-fits<-list()
-h<-0
-fit.est<-dim(0)
+#fits<-list()
+#h<-0
+#fit.est<-dim(0)
 #for (j in 10:length(unique(uf.dat.sum$group))) {
-  for (i in 1:length(unique(uf.dat.sum$year))) {
-    #group.temp<-unique(uf.dat.sum$group)[j]
-    year.temp<-unique(uf.dat.sum$year)[i]
-    #data.temp<-subset(uf.dat.sum, group==group.temp & year==year.temp, select=c(group, survey, n))
-    data.temp<-subset(uf.dat.sum, year==year.temp, select=c(group, survey, n))
-    if (nrow(data.temp)==0) {next}
+  #for (i in 1:length(unique(uf.dat.sum$year))) {
+    ##group.temp<-unique(uf.dat.sum$group)[j]
+    #year.temp<-unique(uf.dat.sum$year)[i]
+    ##data.temp<-subset(uf.dat.sum, group==group.temp & year==year.temp, select=c(group, survey, n))
+    #data.temp<-subset(uf.dat.sum, year==year.temp, select=c(group, survey, n))
+    #if (nrow(data.temp)==0) {next}
     
-    y<-spread(data.temp, survey, n)
-    if(ncol(y)==2) {next} ##move to next if only one count date
+    #y<-spread(data.temp, survey, n)
+    #if(ncol(y)==2) {next} ##move to next if only one count date
     ##excuse missing data in last column
-    y<-y[,1:(ncol(y)-1)]
+    #y<-y[,1:(ncol(y)-1)]
     ##remove sites that don't have all data
-    y<-y[complete.cases(y),]
-    if (nrow(y)==1) {next} ##move to next if only one site
-    groups.temp<-y$group
-    y<-as.matrix(subset(y, select=-group))
-    R<-nrow(y)
-    T<-ncol(y)
+    #y<-y[complete.cases(y),]
+    #if (nrow(y)==1) {next} ##move to next if only one site
+    #groups.temp<-y$group
+    #y<-as.matrix(subset(y, select=-group))
+    #R<-nrow(y)
+    #T<-ncol(y)
     
-    fitnb <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="NB", K=max(y,na.rm=T)*2)
-    h<-h+1
-    fits[[h]]<-fitnb
-    #print(fitnb)
+    #fitnb <- Nmix(y, Xp=cbind(rep(1, R*T)), Xl=cbind(rep(1, R)), mixture="NB", K=max(y,na.rm=T)*2)
+    #h<-h+1
+    #fits[[h]]<-fitnb
+    ##print(fitnb)
     
-    fit.est<-rbind(fit.est, data.frame(year=rep(year.temp, length(groups.temp)), group=as.character(groups.temp), group.num=c(1:length(groups.temp)), list.item=rep(h,length(groups.temp)), Ni=getranef.uniNmix(fitnb)$Ni1))
-  }
-#} 
+    #fit.est<-rbind(fit.est, data.frame(year=rep(year.temp, length(groups.temp)), group=as.character(groups.temp), group.num=c(1:length(groups.temp)), list.item=rep(h,length(groups.temp)), Ni=getranef.uniNmix(fitnb)$Ni1))
+  #}
+##} 
 
-plot(fits[[1]], posterior=T)
+#plot(fits[[1]], posterior=T)
 
-getranef.uniNmix(fits[[1]])
-coef(fits[[1]])
+#getranef.uniNmix(fits[[1]])
+#coef(fits[[1]])
 
 ##plot the estimates
-fig <- ggplot(data = fit.est, aes(x = year, y = Ni))
-fig <- fig + geom_point(color="blue")
-fig <- fig + geom_line(aes(color="model"))
-fig <- fig + geom_line(data=subset(uf.dat.sum, group %in% c("Eden Landing", "Warm Springs", "Ravenswood", "Alviso")) %>% group_by(year, group) %>% mutate(n.max=max(n, na.rm=T)) %>% data.frame(), aes(x=year, y=n.max, color="N max", linetype="N max"))
-fig <- fig + geom_line(data=subset(uf.dat.sum, group %in% c("Eden Landing", "Warm Springs", "Ravenswood", "Alviso")) %>% group_by(year, group) %>% mutate(n.mean=mean(n, na.rm=T)) %>% data.frame(), aes(x=year, y=n.mean, color="N mean"))
-fig <- fig + geom_point(data = subset(uf.dat.sum, group %in% c("Eden Landing", "Warm Springs", "Ravenswood", "Alviso")), aes(x = year, y = n), shape=1, color="black")
+#fig <- ggplot(data = fit.est, aes(x = year, y = Ni))
+#fig <- fig + geom_point(color="blue")
+#fig <- fig + geom_line(aes(color="model"))
+#fig <- fig + geom_line(data=subset(uf.dat.sum, group %in% c("Eden Landing", "Warm Springs", "Ravenswood", "Alviso")) %>% group_by(year, group) %>% mutate(n.max=max(n, na.rm=T)) %>% data.frame(), aes(x=year, y=n.max, color="N max", linetype="N max"))
+#fig <- fig + geom_line(data=subset(uf.dat.sum, group %in% c("Eden Landing", "Warm Springs", "Ravenswood", "Alviso")) %>% group_by(year, group) %>% mutate(n.mean=mean(n, na.rm=T)) %>% data.frame(), aes(x=year#, y=n.mean, color="N mean"))
+#fig <- fig + geom_point(data = subset(uf.dat.sum, group %in% c("Eden Landing", "Warm Springs", "Ravenswood", "Alviso")), aes(x = year, y = n), shape=1, color="black")
 
-fig <- fig + facet_wrap(~group, scales = "free_y")
-fig <- fig + labs(color="") + scale_color_manual(values = c("blue", "black", "black")) 
-fig <- fig + scale_linetype_manual(values = c("dashed", "dashed", "solid"))
+#fig <- fig + facet_wrap(~group, scales = "free_y")
+#fig <- fig + labs(color="") + scale_color_manual(values = c("blue", "black", "black")) 
+#fig <- fig + scale_linetype_manual(values = c("dashed", "dashed", "solid"))
 #fig <- fig + scale_shape_manual(values = c(2))
-fig <- fig + theme_bw()
-fig <- fig + scale_x_continuous(breaks=seq(min(uf.dat.sum$year),max(uf.dat.sum$year), 2), expand=c(0.05,0))
-fig
+#fig <- fig + theme_bw()
+#fig <- fig + scale_x_continuous(breaks=seq(min(uf.dat.sum$year),max(uf.dat.sum$year), 2), expand=c(0.05,0))
+#fig
 
 ##get detection probability by dividing mean count by estimated pop size??
 
