@@ -435,13 +435,14 @@ for (j in 1:length(unique(kf.dat$id))) {
   last.temp<-max(kf.dat$Date[which(kf.dat$id==id.temp)])
   if (length(bday.temp)==0) {next} ##if the bird was not captured as a chick or doesn't have a capture date then move to next bird
   dur.temp<-as.numeric(last.temp-bday.temp)
-  if (dur.temp>ticker.time) {ticker<-ticker+1}
   fate.temp<-subset(kf.dat, id==id.temp & Date==last.temp)$CH
   fate.surv.temp<-ifelse(fate.temp==1, 0, 1) ##if fate is 0, then make it 1, else make it 0
   
   year.temp<-as.numeric(format(bday.temp, "%Y"))
   #brood.temp<-subset(kf.dat, id==id.temp)$Nest.Group[1]
   pond.temp<-subset(kf.dat, id==id.temp & Date==bday.temp & Type=="capture")$Location
+  
+  if (dur.temp>ticker.time & pond.temp %in% c("E14","E6B","E8", "E16B")) {ticker<-ticker+1}
   
   if (dur.temp>31) {dur.temp<-31; fate.surv.temp<-0} ##if the bird was observed after fledging, assume it was alive at fledging and make its last observation at 31 days
   if (dur.temp<31-7) {dur.temp<-dur.temp+floor(runif(n = 1, min=1, max=7)); fate.surv.temp<-1} ##if the bird was not observed in the last week before fledging, assume it died on a random day within a week of its last observation
@@ -450,7 +451,7 @@ for (j in 1:length(unique(kf.dat$id))) {
   surv.dat<-rbind(surv.dat, data.frame(id=id.temp, year=year.temp, duration=dur.temp, fate=fate.surv.temp, pond=pond.temp))
 }
 
-print(str_c("proportion surviving to ", ticker.time, " days")); round(ticker/nrow(surv.dat),2)
+
 
 ##SUBSET DATA
 
@@ -459,6 +460,8 @@ print(str_c("proportion surviving to ", ticker.time, " days")); round(ticker/nro
 surv.dat<-subset(surv.dat, pond %in% c("E14","E6B","E8", "E16B")) ##take only certain locations
 #surv.dat<-subset(surv.dat, year %in% c(2016))
 
+str_c("proportion surviving to ", ticker.time, " days"); round(ticker/nrow(surv.dat),2)
+
 ##SURVIVAL MODEL
 surv.object <- Surv(time = surv.dat$duration, event = surv.dat$fate)
 
@@ -466,12 +469,12 @@ surv.object <- Surv(time = surv.dat$duration, event = surv.dat$fate)
 #plot(surv.fitted.Motulsky)
 
 surv.fitted.default <- survfit(surv.object ~ 1)
-plot(surv.fitted.default, xlab="Days", ylab="Proportion surviving")
+#plot(surv.fitted.default, xlab="Days", ylab="Proportion surviving")
 
 ##plot censored individuals
 #plot(surv.fitted.default, mark.time = T, mark=16)
 
-print(str_c("The proportion of chicks that survive to day ", last(surv.fitted.default$time)," is ", round(last(surv.fitted.default$surv),2), " (", round(last(surv.fitted.default$upper),2), ", ", round(last(surv.fitted.default$lower),2),")"))
+str_c("The proportion of chicks that survive to day ", last(surv.fitted.default$time)," is ", round(last(surv.fitted.default$surv),2), " (", round(last(surv.fitted.default$upper),2), ", ", round(last(surv.fitted.default$lower),2),")")
 
 par(mfrow=c(2,2), mar=c(4,4,3,1))
 for (j in 1:length(unique(surv.dat$pond))) {
@@ -484,7 +487,7 @@ for (j in 1:length(unique(surv.dat$pond))) {
   plot(surv.fitted.default, xlab="Days", ylab="Proportion surviving", main=pond.temp)
   text(x=5, y=0.2, labels = str_c("n alive = ", length(which(dat.temp$fate==0))))
   text(x=5, y=0.1, labels = str_c("n dead = ", length(which(dat.temp$fate==1))))
-  mtext(text = print(str_c("Prop survive to day ", last(surv.fitted.default$time)," is ", round(last(surv.fitted.default$surv),2), " (", round(last(surv.fitted.default$upper),2), ", ", round(last(surv.fitted.default$lower),2),")")), side=3)
+  mtext(text = str_c("Prop survive to day ", last(surv.fitted.default$time)," is ", round(last(surv.fitted.default$surv),2), " (", round(last(surv.fitted.default$upper),2), ", ", round(last(surv.fitted.default$lower),2),")"), side=3)
 }
 par(mfrow=c(1,1))
 
