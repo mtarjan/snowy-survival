@@ -427,8 +427,7 @@ library(survival)
 ##get time elapsed from first to last date as numeric (capture to last resight) and fate (in this case 1 is dead and 0 is alive)
 ##ASSUME DEAD IF NEVER SEEN AFTER BANDING A CHICK##
 surv.dat<-dim(0)
-ticker<-0
-ticker.time<-365
+ticker<-0 ##ticker to count the number of birds that survived their first winter
 for (j in 1:length(unique(kf.dat$id))) {
   id.temp<-unique(kf.dat$id)[j]
   bday.temp<-subset(kf.dat, id==id.temp & Type=="capture" & Age==4)$Date
@@ -442,7 +441,7 @@ for (j in 1:length(unique(kf.dat$id))) {
   #brood.temp<-subset(kf.dat, id==id.temp)$Nest.Group[1]
   pond.temp<-subset(kf.dat, id==id.temp & Date==bday.temp & Type=="capture")$Location
   
-  if (dur.temp>ticker.time & pond.temp %in% c("E14","E6B","E8", "E16B")) {ticker<-ticker+1}
+  if (last.temp>as.Date(str_c("01/03/", year(bday.temp)+1),format="%d/%m/%Y") & pond.temp %in% c("E14","E6B","E8", "E16B")) {ticker<-ticker+1} ##if the last time the bird was seen was after march of the following year, then count it for juvenile survival
   
   if (dur.temp>31) {dur.temp<-31; fate.surv.temp<-0} ##if the bird was observed after fledging, assume it was alive at fledging and make its last observation at 31 days
   if (dur.temp<31-7) {dur.temp<-dur.temp+floor(runif(n = 1, min=1, max=7)); fate.surv.temp<-1} ##if the bird was not observed in the last week before fledging, assume it died on a random day within a week of its last observation
@@ -460,7 +459,7 @@ for (j in 1:length(unique(kf.dat$id))) {
 surv.dat<-subset(surv.dat, pond %in% c("E14","E6B","E8", "E16B")) ##take only certain locations
 #surv.dat<-subset(surv.dat, year %in% c(2016))
 
-str_c("proportion surviving to ", ticker.time, " days"); round(ticker/nrow(surv.dat),2)
+str_c("proportion surviving through first winter:"); round(ticker/nrow(surv.dat),2)
 
 ##SURVIVAL MODEL
 surv.object <- Surv(time = surv.dat$duration, event = surv.dat$fate)
@@ -476,7 +475,8 @@ surv.fitted.default <- survfit(surv.object ~ 1)
 
 str_c("The proportion of chicks that survive to day ", last(surv.fitted.default$time)," is ", round(last(surv.fitted.default$surv),2), " (", round(last(surv.fitted.default$upper),2), ", ", round(last(surv.fitted.default$lower),2),")")
 
-par(mfrow=c(2,2), mar=c(4,4,3,1))
+#par(mfrow=c(2,2), mar=c(4,4,3,1))
+surv.list<-data.frame()
 for (j in 1:length(unique(surv.dat$pond))) {
   pond.temp<-unique(surv.dat$pond)[j]
   dat.temp<-subset(surv.dat, pond==pond.temp)
@@ -484,18 +484,53 @@ for (j in 1:length(unique(surv.dat$pond))) {
   
   surv.object <- Surv(time = dat.temp$duration, event = dat.temp$fate)
   surv.fitted.default <- survfit(surv.object ~ 1)
-  plot(surv.fitted.default, xlab="Days", ylab="Proportion surviving", main=pond.temp)
-  text(x=5, y=0.2, labels = str_c("n alive = ", length(which(dat.temp$fate==0))))
-  text(x=5, y=0.1, labels = str_c("n dead = ", length(which(dat.temp$fate==1))))
-  mtext(text = str_c("Prop survive to day ", last(surv.fitted.default$time)," is ", round(last(surv.fitted.default$surv),2), " (", round(last(surv.fitted.default$upper),2), ", ", round(last(surv.fitted.default$lower),2),")"), side=3)
+  #plot(surv.fitted.default, xlab="Days", ylab="Proportion surviving", main=pond.temp)
+  #text(x=5, y=0.2, labels = str_c("n alive = ", length(which(dat.temp$fate==0))))
+  #text(x=5, y=0.1, labels = str_c("n dead = ", length(which(dat.temp$fate==1))))
+  #mtext(text = str_c("Prop survive to day ", last(surv.fitted.default$time)," is ", round(last(surv.fitted.default$surv),2), " (", round(last(surv.fitted.default$upper),2), ", ", round(last(surv.fitted.default$lower),2),")"), side=3)
+  n.dead<-rep(length(which(dat.temp$fate==1)),length(surv.fitted.default$time))
+  n.alive<-rep(length(which(dat.temp$fate==0)),length(surv.fitted.default$time))
+  surv.list<-rbind(surv.list,(data.frame(pond=rep(pond.temp, length(surv.fitted.default$time)), year=rep("total", length(surv.fitted.default$time)), time=surv.fitted.default$time, surv=surv.fitted.default$surv, upper=surv.fitted.default$upper, lower=surv.fitted.default$lower, n.alive=n.alive, n.dead=n.dead)))
+  for (i in 1:length(unique(dat.temp$year))) {
+    year.temp<-unique(dat.temp$year)[i]
+    dat.year.temp<-subset(dat.temp, year==year.temp)
+    if (nrow(dat.year.temp)<10) {next}
+    
+    surv.object <- Surv(time = dat.year.temp$duration, event = dat.year.temp$fate)
+    surv.fitted.default <- survfit(surv.object ~ 1)
+    
+    n.dead<-rep(length(which(dat.year.temp$fate==1)),length(surv.fitted.default$time))
+    n.alive<-rep(length(which(dat.year.temp$fate==0)),length(surv.fitted.default$time))
+    
+    surv.list<-rbind(surv.list,(data.frame(pond=rep(pond.temp, length(surv.fitted.default$time)), year=rep(as.character(year.temp), length(surv.fitted.default$time)), time=surv.fitted.default$time, surv=surv.fitted.default$surv, upper=surv.fitted.default$upper, lower=surv.fitted.default$lower, n.alive=n.alive, n.dead=n.dead)))
+    
+  }
 }
-par(mfrow=c(1,1))
+#par(mfrow=c(1,1))
 
 ##CONS: assumes perfect detection rate. very sensitive to not detecting deaths. Curve only drops if death is detected, so need to make these plots for birds with confident fates
+
+fig.surv1 <- ggplot(data = subset(surv.list, year=="total"), aes(x=time, y=surv))
+fig.surv1 <- fig.surv1 + geom_step()
+fig.surv1 <- fig.surv1 + facet_wrap(~pond, strip.position ="top")
+fig.surv1 <- fig.surv1 + geom_step(aes(x = time, y = upper), linetype="dashed") + geom_step(aes(x = time, y = lower), linetype="dashed")
+fig.surv1 <- fig.surv1 + theme_bw() 
+fig.surv1 <- fig.surv1 + xlab("Days post-banding") + ylab("Proportion chicks surviving") 
+fig.surv1 <- fig.surv1 + theme(axis.line.x=element_line(), axis.line.y=element_line(), axis.title.y = element_text(margin = margin(r=1, unit="line")), panel.grid = element_blank(), panel.spacing = unit(1, "lines"))
+fig.surv1 <- fig.surv1 + scale_x_continuous(expand=c(0,0), breaks = seq(1, 32, 2))
+fig.surv1 <- fig.surv1 + scale_y_continuous(expand=c(0,0), breaks = seq(0.0, 1.0, 0.1), limits = c(0,1))
+fig.surv1
 
 ##can compare survival curves across sites and years: https://rpubs.com/brouwern/MotulskyCh5
 
 ##this approach is good for E14; good tracking of broods over time
+
+##TABLE OF SAMPLE SIZES FOR BANDED CHICKS
+surv.n<-data.frame(table(surv.dat$year, as.character(surv.dat$pond)))
+surv.n<-spread(data = surv.n, key = Var2, value=Freq)
+row.names(surv.n)<-surv.n$Var1
+surv.n<-subset(surv.n, select=-Var1)
+surv.n$Annual.Total<-apply(surv.n, MARGIN = 1, FUN = sum)
 
 ###  N-MIXTURE MODEL  ###
 head(uf.dat.sum)

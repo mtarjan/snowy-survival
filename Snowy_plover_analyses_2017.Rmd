@@ -25,22 +25,27 @@ Average juvenile survival (i.e. the probability of fledging and surviving to fir
 ##Fledging rate
 We estimated the fleding rate by tracking the survival of chicks banded within two days after hatching. We restricted our analysis to chicks at sites that were visited at least once a week. These sites were monitored closely, so chicks that went missing before fledging (31 days) were presumed dead. We assumed that their death date fell within a week of the last date they were observed. We randomly selected the exact date within the week following their last observation. Birds that were observed in subsequent years as adults were marked as fledged. The rate of observing adult birds that went missing as chicks is low (INSERT RATE), so we presume that the underestimate in fledge rate caused by detection rate is relatively low.
 
-We used a survival analysis (survival package in R) to estimate fledging rate and survival over the first 31 days after hatching. 
+We used a survival analysis (survival package in R) to estimate fledging rate and survival over the first 31 days after hatching. Hudgens et al. calculated the juvenile survival rate as the combined probability that an individual both fledged and survived its first winter  (i.e. from hatch date to March 1st of the following year).
 
 ##Population growth
 We estimated population sizes of breeding adults and detection probabilities using n mixture models and counts of untagged adult birds. All adult birds were counted at least once a week at each site. We used the maximum count if multiple counts existed in a week. Counts occurred during the breeding season (May to June), and we assumed that counts represent breeding individuals and not migrants.  
 
 Adult birds move between sites daily when foraging, so we estimated population size at the complex level. If birds move between complexes, this will cause inflated variability in counts (violoating the assumption that all birds counted are within the breeding population for that site) and would lead to underestimates in detection probability and population size.
 
-N mixture models estimate the population size as a whole for birds that have been counted at multiple sites. We determined that the population was at the complex level, and that the ponds would serve as sites.
+N-mixture models estimate the population size as a whole for birds that have been counted at multiple sites. We determined that the population was at the complex level, and that the ponds would serve as sites.
 
 
 #Results
 ##Survival and recruitment estimates
 
-Across all sites, the fledging rate was `r round(length(which(surv.dat$duration==31))/nrow(surv.dat), 2)` and the juvenile survival rate, or the proportion of chicks that fledged and survived 365 days to their first winter, was `r round(ticker/nrow(surv.dat),2)`.
+Across all sites, the fledging rate was `r round(length(which(surv.dat$duration==31))/nrow(surv.dat), 2)` and the juvenile survival rate, or the proportion of chicks that fledged and survived through their first winter to March 1 of the following year, was `r round(ticker/nrow(surv.dat),2)`.
 
-#Figures
+#Tables and Figures
+Table 1. Sample sizes of banded chicks for each site used to estimate fledging and survival rates.
+```{r, echo=F}
+knitr::kable(surv.n)
+```
+
 
 ```{r, echo=F, fig.width=10, fig.height=7, fig.cap="Figure 1. Survival to fledging of snowy plover chicks at closely monitored ponds within the Eden Landing complex in Hayward, CA."}
 par(mfrow=c(2,2), mar=c(4,4,3,1))
