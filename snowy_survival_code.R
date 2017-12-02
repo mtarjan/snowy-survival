@@ -508,8 +508,11 @@ for (j in 1:length(unique(surv.dat$pond))) {
 }
 #par(mfrow=c(1,1))
 
+surv.list$year<-factor(surv.list$year, levels=c("total", 2008:2017))
+
 ##CONS: assumes perfect detection rate. very sensitive to not detecting deaths. Curve only drops if death is detected, so need to make these plots for birds with confident fates
 
+##SURVIVAL ACROSS ALL YEARS AT EACH POND
 fig.surv1 <- ggplot(data = subset(surv.list, year=="total"), aes(x=time, y=surv))
 fig.surv1 <- fig.surv1 + geom_step()
 fig.surv1 <- fig.surv1 + facet_wrap(~pond, strip.position ="top")
@@ -519,7 +522,34 @@ fig.surv1 <- fig.surv1 + xlab("Days post-banding") + ylab("Proportion chicks sur
 fig.surv1 <- fig.surv1 + theme(axis.line.x=element_line(), axis.line.y=element_line(), axis.title.y = element_text(margin = margin(r=1, unit="line")), panel.grid = element_blank(), panel.spacing = unit(1, "lines"))
 fig.surv1 <- fig.surv1 + scale_x_continuous(expand=c(0,0), breaks = seq(1, 32, 2))
 fig.surv1 <- fig.surv1 + scale_y_continuous(expand=c(0,0), breaks = seq(0.0, 1.0, 0.1), limits = c(0,1))
+fig.surv1 <- fig.surv1 + geom_text(aes(x = 29, y = 0.9, label=n.alive+n.dead)) + geom_text(aes(x = 27.5, y = 0.9, label="n = "))
 fig.surv1
+
+##E14 PLOT
+fig.surv2 <- ggplot(data = subset(surv.list, pond=="E14" & year!="total"), aes(x=time, y=surv))
+fig.surv2 <- fig.surv2 + geom_step()
+fig.surv2 <- fig.surv2 + facet_wrap(~year, strip.position ="top")
+fig.surv2 <- fig.surv2 + geom_step(aes(x = time, y = upper), linetype="dashed") + geom_step(aes(x = time, y = lower), linetype="dashed")
+fig.surv2 <- fig.surv2 + theme_bw() 
+fig.surv2 <- fig.surv2 + xlab("Days post-banding") + ylab("Proportion chicks surviving") 
+fig.surv2 <- fig.surv2 + theme(axis.line.x=element_line(), axis.line.y=element_line(), axis.title.y = element_text(margin = margin(r=1, unit="line")), panel.grid = element_blank(), panel.spacing = unit(1, "lines"))
+fig.surv2 <- fig.surv2 + scale_x_continuous(expand=c(0,0), breaks = seq(1, 32, 2))
+fig.surv2 <- fig.surv2 + scale_y_continuous(expand=c(0,0), breaks = seq(0.0, 1.0, 0.1), limits = c(0,1))
+fig.surv2 <- fig.surv2 + geom_text(aes(x = 29, y = 0.9, label=n.alive+n.dead)) + geom_text(aes(x = 27.5, y = 0.9, label="n = "))
+fig.surv2
+
+##E8 PLOT
+fig.surv3 <- ggplot(data = subset(surv.list, pond=="E8" & year!="total"), aes(x=time, y=surv))
+fig.surv3 <- fig.surv3 + geom_step()
+fig.surv3 <- fig.surv3 + facet_wrap(~year, strip.position ="top")
+fig.surv3 <- fig.surv3 + geom_step(aes(x = time, y = upper), linetype="dashed") + geom_step(aes(x = time, y = lower), linetype="dashed")
+fig.surv3 <- fig.surv3 + theme_bw() 
+fig.surv3 <- fig.surv3 + xlab("Days post-banding") + ylab("Proportion chicks surviving") 
+fig.surv3 <- fig.surv3 + theme(axis.line.x=element_line(), axis.line.y=element_line(), axis.title.y = element_text(margin = margin(r=1, unit="line")), panel.grid = element_blank(), panel.spacing = unit(1, "lines"))
+fig.surv3 <- fig.surv3 + scale_x_continuous(expand=c(0,0), breaks = seq(1, 32, 2))
+fig.surv3 <- fig.surv3 + scale_y_continuous(expand=c(0,0), breaks = seq(0.0, 1.0, 0.1), limits = c(0,1))
+fig.surv3 <- fig.surv3 + geom_text(aes(x = 29, y = 0.9, label=n.alive+n.dead)) + geom_text(aes(x = 27.5, y = 0.9, label="n = "))
+fig.surv3
 
 ##can compare survival curves across sites and years: https://rpubs.com/brouwern/MotulskyCh5
 

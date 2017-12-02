@@ -40,6 +40,8 @@ N-mixture models estimate the population size as a whole for birds that have bee
 
 Across all sites, the fledging rate was `r round(length(which(surv.dat$duration==31))/nrow(surv.dat), 2)` and the juvenile survival rate, or the proportion of chicks that fledged and survived through their first winter to March 1 of the following year, was `r round(ticker/nrow(surv.dat),2)`.
 
+Initial drop in survival at E6B may be due to lower effort or detection probability compared to E14. If birds are not tracked closely during the season, all the birds that were never seen again would "die" in the first week according to the model, and all the birds that lived past the season would create a horizontal line in survival, as shown in Figure 1.
+
 #Tables and Figures
 Table 1. Sample sizes of banded chicks for each site used to estimate fledging and survival rates.
 ```{r, echo=F}
@@ -48,58 +50,20 @@ knitr::kable(surv.n)
 
 
 ```{r, echo=F, fig.width=10, fig.height=7, fig.cap="Figure 1. Survival to fledging of snowy plover chicks at closely monitored ponds within the Eden Landing complex in Hayward, CA."}
-par(mfrow=c(2,2), mar=c(4,4,3,1))
-for (j in 1:length(unique(surv.dat$pond))) {
-  pond.temp<-unique(surv.dat$pond)[j]
-  dat.temp<-subset(surv.dat, pond==pond.temp)
-  if (nrow(dat.temp)==0) {next}
-  
-  surv.object <- Surv(time = dat.temp$duration, event = dat.temp$fate)
-  surv.fitted.default <- survfit(surv.object ~ 1)
-  plot(surv.fitted.default, xlab="Days", ylab="Proportion surviving", main=pond.temp)
-  text(x=3, y=0.15, labels = str_c("n alive = ", length(which(dat.temp$fate==0))))
-  text(x=3, y=0.05, labels = str_c("n dead = ", length(which(dat.temp$fate==1))))
-  #mtext(text = str_c("Prop survive to day ", last(surv.fitted.default$time)," is ", round(last(surv.fitted.default$surv),2), " (", round(last(surv.fitted.default$upper),2), ", ", round(last(surv.fitted.default$lower),2),")"), side=3)
-}
-par(mfrow=c(1,1))
+
+print(fig.surv1)
 ```
 
 
-```{r, echo=F, fig.width=7, fig.height=10, fig.cap="Figure 2. Survival to fledging of snowy plover chicks at E14 within the Eden Landing complex in Hayward, CA."}
-par(mfrow=c(3,2), mar=c(4,4,3,1))
-surv.dat.sub<-subset(surv.dat, pond=="E14")
-for (j in 1:length(unique(surv.dat.sub$year))) {
-  year.temp<-unique(surv.dat.sub$year)[order(unique(surv.dat.sub$year))][j]
-  dat.temp<-subset(surv.dat.sub, year==year.temp)
-  if (nrow(dat.temp)<10) {next}
-  
-  surv.object <- Surv(time = dat.temp$duration, event = dat.temp$fate)
-  surv.fitted.default <- survfit(surv.object ~ 1)
-  plot(surv.fitted.default, xlab="Days", ylab="Proportion surviving", main=year.temp)
-  text(x=3, y=0.15, labels = str_c("n alive = ", length(which(dat.temp$fate==0))))
-  text(x=3, y=0.05, labels = str_c("n dead = ", length(which(dat.temp$fate==1))))
-  mtext(text = str_c("Fledge rate: ",  round(last(surv.fitted.default$surv),2), " (", round(last(surv.fitted.default$upper),2), ", ", round(last(surv.fitted.default$lower),2),")"), side=3)
-}
-par(mfrow=c(1,1))
+```{r, echo=F, fig.width=6.5, fig.height=4, fig.cap="Figure 2. Survival to fledging of snowy plover chicks at E14 within the Eden Landing complex in Hayward, CA. Missing years imply insufficient data (fewer than 10 banded chicks)."}
+
+print(fig.surv2)
 ```
 
 
-```{r, echo=F, fig.width=7, fig.height=10, fig.cap="Figure 3. Survival to fledging of snowy plover chicks at E8 within the Eden Landing complex in Hayward, CA."}
-par(mfrow=c(3,2), mar=c(4,4,3,1))
-surv.dat.sub<-subset(surv.dat, pond=="E8")
-for (j in 1:length(unique(surv.dat.sub$year))) {
-  year.temp<-unique(surv.dat.sub$year)[order(unique(surv.dat.sub$year))][j]
-  dat.temp<-subset(surv.dat.sub, year==year.temp)
-  if (nrow(dat.temp)<10) {next}
-  
-  surv.object <- Surv(time = dat.temp$duration, event = dat.temp$fate)
-  surv.fitted.default <- survfit(surv.object ~ 1)
-  plot(surv.fitted.default, xlab="Days", ylab="Proportion surviving", main=year.temp)
-  text(x=3, y=0.15, labels = str_c("n alive = ", length(which(dat.temp$fate==0))))
-  text(x=3, y=0.05, labels = str_c("n dead = ", length(which(dat.temp$fate==1))))
-  mtext(text = str_c("Fledge rate: ",  round(last(surv.fitted.default$surv),2), " (", round(last(surv.fitted.default$upper),2), ", ", round(last(surv.fitted.default$lower),2),")"), side=3)
-}
-par(mfrow=c(1,1))
+```{r, echo=F, fig.width=6.5, fig.height=4, fig.cap="Figure 3. Survival to fledging of snowy plover chicks at E8 within the Eden Landing complex in Hayward, CA. Missing years imply insufficient data (fewer than 10 banded chicks)."}
+
+print(fig.surv3)
 ```
 
 #Works Cited
