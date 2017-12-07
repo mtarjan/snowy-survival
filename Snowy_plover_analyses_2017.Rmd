@@ -1,7 +1,7 @@
 ---
 title: "Snowy Plover Analyses 2017"
 author: "Max Tarjan"
-date: "October 14, 2017"
+date: "December 7, 2017"
 output: 
   word_document:
   fig_caption: yes
@@ -19,28 +19,34 @@ source("snowy_survival_code.R")
 #Draft Report prepared for the Bay Delta USFWS
 #Introduction
 
-Average juvenile survival (i.e. the probability of fledging and surviving to first winter) across all sites was 0.188 (Hudgens et al 2014). 1.60 male chicks per male. Adult survival 0.71-0.60. Juvenile survival 0.19. Detection probability for SF Bay was 0.65 (Hudgens et al. 2014).
-
 #Methods
-##Fledging rate
-We estimated the fleding rate by tracking the survival of chicks banded within two days after hatching. We restricted our analysis to chicks at sites that were visited at least once a week. These sites were monitored closely, so chicks that went missing before fledging (31 days) were presumed dead. We assumed that their death date fell within a week of the last date they were observed. We randomly selected the exact date within the week following their last observation. Birds that were observed in subsequent years as adults were marked as fledged. The rate of observing adult birds that went missing as chicks is low (INSERT RATE), so we presume that the underestimate in fledge rate caused by detection rate is relatively low.
+##Fledging and juvenile survival rates
+We estimated the fledging rate by tracking the survival of chicks banded within two days after hatching. We restricted our analysis to chicks at sites that were visited at least once a week. These sites were monitored closely, so chicks that went missing before fledging (31 days) were presumed dead. We assumed that their death date fell within a week of the last date they were observed. We randomly selected the exact date within the week following their last observation. Birds that were observed in subsequent years as adults were marked as fledged. The rate of observing adult birds that went missing as chicks is low (INSERT RATE), so we presume that the underestimate in fledge rate caused by detection rate is relatively low.
 
 We used a survival analysis (survival package in R) to estimate fledging rate and survival over the first 31 days after hatching. Hudgens et al. calculated the juvenile survival rate as the combined probability that an individual both fledged and survived its first winter  (i.e. from hatch date to March 1st of the following year).
 
 ##Population growth
 We estimated population sizes of breeding adults and detection probabilities using n mixture models and counts of untagged adult birds. All adult birds were counted at least once a week at each site. We used the maximum count if multiple counts existed in a week. Counts occurred during the breeding season (May to June), and we assumed that counts represent breeding individuals and not migrants.  
 
-Adult birds move between sites daily when foraging, so we estimated population size at the complex level. If birds move between complexes, this will cause inflated variability in counts (violoating the assumption that all birds counted are within the breeding population for that site) and would lead to underestimates in detection probability and population size.
+Adult birds move between sites daily when foraging, so we estimated population size at the complex level. If birds move between complexes, this will cause inflated variability in counts (violating the assumption that all birds counted are within the breeding population for that site) and would lead to underestimates in detection probability and overestimates in population size.
 
 N-mixture models estimate the population size as a whole for birds that have been counted at multiple sites. We determined that the population was at the complex level, and that the ponds would serve as sites.
 
 
 #Results
-##Survival and recruitment estimates
+##Fledging and juvenile survival rates
 
 Across all sites, the fledging rate was `r round(length(which(surv.dat$duration==31))/nrow(surv.dat), 2)` and the juvenile survival rate, or the proportion of chicks that fledged and survived through their first winter to March 1 of the following year, was `r round(ticker/nrow(surv.dat),2)`.
 
 Initial drop in survival at E6B may be due to lower effort or detection probability compared to E14. If birds are not tracked closely during the season, all the birds that were never seen again would "die" in the first week according to the model, and all the birds that lived past the season would create a horizontal line in survival, as shown in Figure 1.
+
+#Discussion
+##Survival and recruitment
+We report the fledging rate for Snowy Plovers in recovery Unit 3 for the first time. At site that were closely monitored within the Eden Landing complex, the overall fledging rate was `r round(length(which(surv.dat$duration==31))/nrow(surv.dat), 2)` across all years. 
+
+Average juvenile survival (i.e. the probability of fledging and surviving to first winter) across all sites was `r round(ticker/nrow(surv.dat),2)`, which is very similar to the juvenile survival rate reported by Hudgens et al. (2014) for the south bay: 0.188. 
+
+Hudgens also reported that Snowy Plovers produced 1.60 male chicks per male, adult survival was 0.71-0.60, and detection probability for SF Bay was 0.65 (Hudgens et al. 2014).
 
 #Tables and Figures
 Table 1. Sample sizes of banded chicks for each site used to estimate fledging and survival rates.
@@ -49,19 +55,19 @@ knitr::kable(surv.n)
 ```
 
 
-```{r, echo=F, fig.width=10, fig.height=7, fig.cap="Figure 1. Survival to fledging of snowy plover chicks at closely monitored ponds within the Eden Landing complex in Hayward, CA."}
+```{r, echo=F, fig.width=10, fig.height=7, fig.cap="Figure 1. Survival to fledging of snowy plover chicks at closely monitored ponds within the Eden Landing complex in Hayward, CA. Dashed lines denote the 95% CI. n indicates the number of banded chicks that were tracked from within one day of hatching to fledging (31 days)."}
 
 print(fig.surv1)
 ```
 
 
-```{r, echo=F, fig.width=6.5, fig.height=4, fig.cap="Figure 2. Survival to fledging of snowy plover chicks at E14 within the Eden Landing complex in Hayward, CA. Missing years imply insufficient data (fewer than 10 banded chicks)."}
+```{r, echo=F, fig.width=6.5, fig.height=3.75, fig.cap="Figure 2. Survival to fledging of snowy plover chicks at E14 within the Eden Landing complex in Hayward, CA. Dashed lines denote the 95% CI. n indicates the number of banded chicks that were tracked from within one day of hatching to fledging (31 days). Missing years imply insufficient data (fewer than 10 banded chicks)."}
 
 print(fig.surv2)
 ```
 
 
-```{r, echo=F, fig.width=6.5, fig.height=4, fig.cap="Figure 3. Survival to fledging of snowy plover chicks at E8 within the Eden Landing complex in Hayward, CA. Missing years imply insufficient data (fewer than 10 banded chicks)."}
+```{r, echo=F, fig.width=6.5, fig.height=3.75, fig.cap="Figure 3. Survival to fledging of snowy plover chicks at E8 within the Eden Landing complex in Hayward, CA. Dashed lines denote the 95% CI. n indicates the number of banded chicks that were tracked from within one day of hatching to fledging (31 days). Missing years imply insufficient data (fewer than 10 banded chicks)."}
 
 print(fig.surv3)
 ```

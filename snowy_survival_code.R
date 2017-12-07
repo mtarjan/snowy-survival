@@ -519,10 +519,11 @@ fig.surv1 <- fig.surv1 + facet_wrap(~pond, strip.position ="top")
 fig.surv1 <- fig.surv1 + geom_step(aes(x = time, y = upper), linetype="dashed") + geom_step(aes(x = time, y = lower), linetype="dashed")
 fig.surv1 <- fig.surv1 + theme_bw() 
 fig.surv1 <- fig.surv1 + xlab("Days post-banding") + ylab("Proportion chicks surviving") 
-fig.surv1 <- fig.surv1 + theme(axis.line.x=element_line(), axis.line.y=element_line(), axis.title.y = element_text(margin = margin(r=1, unit="line")), panel.grid = element_blank(), panel.spacing = unit(1, "lines"))
-fig.surv1 <- fig.surv1 + scale_x_continuous(expand=c(0,0), breaks = seq(1, 32, 2))
-fig.surv1 <- fig.surv1 + scale_y_continuous(expand=c(0,0), breaks = seq(0.0, 1.0, 0.1), limits = c(0,1))
-fig.surv1 <- fig.surv1 + geom_text(aes(x = 29, y = 0.9, label=n.alive+n.dead)) + geom_text(aes(x = 27.5, y = 0.9, label="n = "))
+fig.surv1 <- fig.surv1 + theme(axis.line.x=element_line(), axis.line.y=element_line(), axis.title.y = element_text(margin = margin(r=1, unit="line")), panel.grid = element_blank(), panel.spacing = unit(1.25, "lines"))
+fig.surv1 <- fig.surv1 + scale_x_continuous(expand=c(0,0), breaks = seq(0, 32, 5))
+fig.surv1 <- fig.surv1 + scale_y_continuous(expand=c(0,0), breaks = seq(0.0, 1.0, 0.2), limits = c(0,1))
+fig.surv1 <- fig.surv1 + geom_text(aes(x = 5.5, y = 0.1, label=n.alive+n.dead)) + geom_text(aes(x = 3.5, y = 0.1, label="n = "))
+fig.surv1 <- fig.surv1 + theme(text = element_text(size=20))
 fig.surv1
 
 ##E14 PLOT
@@ -533,9 +534,10 @@ fig.surv2 <- fig.surv2 + geom_step(aes(x = time, y = upper), linetype="dashed") 
 fig.surv2 <- fig.surv2 + theme_bw() 
 fig.surv2 <- fig.surv2 + xlab("Days post-banding") + ylab("Proportion chicks surviving") 
 fig.surv2 <- fig.surv2 + theme(axis.line.x=element_line(), axis.line.y=element_line(), axis.title.y = element_text(margin = margin(r=1, unit="line")), panel.grid = element_blank(), panel.spacing = unit(1, "lines"))
-fig.surv2 <- fig.surv2 + scale_x_continuous(expand=c(0,0), breaks = seq(1, 32, 2))
-fig.surv2 <- fig.surv2 + scale_y_continuous(expand=c(0,0), breaks = seq(0.0, 1.0, 0.1), limits = c(0,1))
-fig.surv2 <- fig.surv2 + geom_text(aes(x = 29, y = 0.9, label=n.alive+n.dead)) + geom_text(aes(x = 27.5, y = 0.9, label="n = "))
+fig.surv2 <- fig.surv2 + scale_x_continuous(expand=c(0,0), breaks = seq(0, 32, 5))
+fig.surv2 <- fig.surv2 + scale_y_continuous(expand=c(0,0), breaks = seq(0.0, 1.0, 0.2), limits = c(0,1))
+fig.surv2 <- fig.surv2 + geom_text(aes(x = 6.75, y = 0.1, label=n.alive+n.dead)) + geom_text(aes(x = 4, y = 0.1, label="n = "))
+fig.surv2 <- fig.surv2 + theme(text = element_text(size=14))
 fig.surv2
 
 ##E8 PLOT
@@ -545,10 +547,11 @@ fig.surv3 <- fig.surv3 + facet_wrap(~year, strip.position ="top")
 fig.surv3 <- fig.surv3 + geom_step(aes(x = time, y = upper), linetype="dashed") + geom_step(aes(x = time, y = lower), linetype="dashed")
 fig.surv3 <- fig.surv3 + theme_bw() 
 fig.surv3 <- fig.surv3 + xlab("Days post-banding") + ylab("Proportion chicks surviving") 
-fig.surv3 <- fig.surv3 + theme(axis.line.x=element_line(), axis.line.y=element_line(), axis.title.y = element_text(margin = margin(r=1, unit="line")), panel.grid = element_blank(), panel.spacing = unit(1, "lines"))
-fig.surv3 <- fig.surv3 + scale_x_continuous(expand=c(0,0), breaks = seq(1, 32, 2))
-fig.surv3 <- fig.surv3 + scale_y_continuous(expand=c(0,0), breaks = seq(0.0, 1.0, 0.1), limits = c(0,1))
-fig.surv3 <- fig.surv3 + geom_text(aes(x = 29, y = 0.9, label=n.alive+n.dead)) + geom_text(aes(x = 27.5, y = 0.9, label="n = "))
+fig.surv3 <- fig.surv3 + theme(axis.line.x=element_line(), axis.line.y=element_line(), axis.title.y = element_text(margin = margin(r=1, unit="line")),  panel.grid = element_blank(), panel.spacing = unit(1, "lines"))
+fig.surv3 <- fig.surv3 + scale_x_continuous(expand=c(0,0), breaks = seq(0, 32, 5))
+fig.surv3 <- fig.surv3 + scale_y_continuous(expand=c(0,0), breaks = seq(0.0, 1.0, 0.2), limits = c(0,1))
+fig.surv3 <- fig.surv3 + geom_text(aes(x = 6.75, y = 0.1, label=n.alive+n.dead)) + geom_text(aes(x = 4, y = 0.1, label="n = "))
+fig.surv3 <- fig.surv3 + theme(text = element_text(size=14))
 fig.surv3
 
 ##can compare survival curves across sites and years: https://rpubs.com/brouwern/MotulskyCh5
@@ -678,4 +681,80 @@ T<-ncol(y)
 ## ANOTHER N MIXTURE MODEL ##
 ##https://cran.r-project.org/web/packages/unmarked/unmarked.pdf pcount function
 
+#install.packages("unmarked")
+library(unmarked)
+
 ##read unmarked paper
+
+##simulate data as an example
+# Simulate data
+set.seed(35)
+nSites <- 100
+nVisits <- 3
+x <- rnorm(nSites) # a covariate
+beta0 <- 0
+beta1 <- 1
+lambda <- exp(beta0 + beta1*x) # expected counts at each site
+N <- rpois(nSites, lambda) # latent abundance
+y <- matrix(NA, nSites, nVisits)
+p <- c(0.3, 0.6, 0.8) # detection prob for each visit
+for(j in 1:nVisits) {
+  y[,j] <- rbinom(nSites, N, p[j])
+}
+# Organize data
+visitMat <- matrix(as.character(1:nVisits), nSites, nVisits, byrow=TRUE)
+
+umf <- unmarkedFramePCount(y=y, siteCovs=data.frame(x=x),obsCovs=list(visit=visitMat))
+
+summary(umf)
+# Fit a model
+fm1 <- pcount(~visit-1 ~ x, umf, K=50)
+fm1
+plogis(coef(fm1, type="det")) # Should be close to p
+# Empirical Bayes estimation of random effects
+(fm1re <- ranef(fm1))
+plot(fm1re, subset=site %in% 1:25, xlim=c(-1,40))
+sum(bup(fm1re)) # Estimated population size
+sum(N) # Actual population size
+
+# Real data
+#data(mallard)
+#mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,obsCovs = mallard.obs)
+#(fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF, K=30))
+#(fm.mallard.nb <- pcount(~ date + I(date^2) ~ length + elev, mixture = "NB", mallardUMF, K=30))
+
+##SNOWY PLOVER DATA
+dat.test<-subset(uf.dat.sum, year==2017 & group %in% c("Alviso", "Eden Landing", "Ravenswood", "Warm Springs") & survey <10, select=-month)
+y <- subset(spread(data = dat.test, key = survey, value=n),select= -c(year, perfect_survey, R))
+visitMat.test <- matrix(as.character(1:(ncol(y)-1)), nrow(y), ncol(y)-1, byrow=TRUE)
+umf.test <- unmarkedFramePCount(y = subset(y, select=-group), siteCovs = data.frame(site=factor(y$group)), obsCovs = list(visit=visitMat.test))
+summary(umf.test)
+fm1 <- pcount(~visit-1 ~ site, mixture= "NB", umf.test, K=max(dat.test$n)*20)
+fm1
+plogis(coef(fm1, type="det")) # Should be close to p
+# Empirical Bayes estimation of random effects
+(fm1re <- ranef(fm1)); as.character(y$group)
+plot(fm1re)
+sum(bup(fm1re)) # Estimated population size
+
+##get posterior probabilities
+est<-fm1re@post[,,1]
+est<-data.frame(val=colnames(est), x.1=est[1,], x.2=est[2,], x.3=est[3,], x.4=est[4,])
+est<-gather(data = est, key = site, value = prob, 2:5)
+head(est)
+
+fig.test <- ggplot(data = est, aes(x = val, y = prob))
+fig.test <- fig.test + geom_bar(stat="identity")
+fig.test <- fig.test + facet_wrap(~site)
+fig.test
+
+fig.n <- ggplot(dat.test, aes(x = n))
+fig.n <- fig.n + geom_histogram(binwidth = 5)
+fig.n <- fig.n + facet_wrap(~group)
+fig.n <- fig.n + theme_bw() 
+fig.n <- fig.n + xlab("Counts of adult birds") + ylab("Frequency") 
+fig.n <- fig.n + theme(axis.line.x=element_line(), axis.line.y=element_line(), axis.title.y = element_text(margin = margin(r=1, unit="line")),  panel.grid = element_blank(), panel.spacing = unit(1, "lines"))
+fig.n <- fig.n + scale_x_continuous(expand=c(0,0), breaks = seq(0,150,25))
+fig.n <- fig.n + scale_y_continuous(expand = c(0,0))
+fig.n <- fig.n + theme(text = element_text(size=20))
+fig.n
