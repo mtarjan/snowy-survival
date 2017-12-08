@@ -5,6 +5,7 @@ date: "December 7, 2017"
 output: 
   word_document:
   fig_caption: yes
+  reference_docx: "S:/Science/Waterbird/Program Folders (Gulls, SNPL, ADPP, etc)/Snowy Plovers/Snowy survival project 2017/Snowy_plover_analyses_2017.docx"
 ---
 
 ```{r setup, include=FALSE}
@@ -40,6 +41,9 @@ Across all sites, the fledging rate was `r round(length(which(surv.dat$duration=
 
 Initial drop in survival at E6B may be due to lower effort or detection probability compared to E14. If birds are not tracked closely during the season, all the birds that were never seen again would "die" in the first week according to the model, and all the birds that lived past the season would create a horizontal line in survival, as shown in Figure 1.
 
+##Population size
+The detection probability across all surveys and sites was `r round(mean(plogis(coef(fm1, type="det"))),2)`. Estimated population sizes for `r as.character(y$group)` respectively: `r round(bup(fm1re),0)`. 
+
 #Discussion
 ##Survival and recruitment
 We report the fledging rate for Snowy Plovers in recovery Unit 3 for the first time. At site that were closely monitored within the Eden Landing complex, the overall fledging rate was `r round(length(which(surv.dat$duration==31))/nrow(surv.dat), 2)` across all years. 
@@ -54,6 +58,10 @@ Table 1. Sample sizes of banded chicks for each site used to estimate fledging a
 knitr::kable(surv.n)
 ```
 
+Table 2. Count data for adult Snowy Plovers in Recovery Unit 3 for each survey in 2017.
+```{r, echo=F}
+knitr::kable(uf.n)
+```
 
 ```{r, echo=F, fig.width=10, fig.height=7, fig.cap="Figure 1. Survival to fledging of snowy plover chicks at closely monitored ponds within the Eden Landing complex in Hayward, CA. Dashed lines denote the 95% CI. n indicates the number of banded chicks that were tracked from within one day of hatching to fledging (31 days)."}
 
@@ -70,6 +78,11 @@ print(fig.surv2)
 ```{r, echo=F, fig.width=6.5, fig.height=3.75, fig.cap="Figure 3. Survival to fledging of snowy plover chicks at E8 within the Eden Landing complex in Hayward, CA. Dashed lines denote the 95% CI. n indicates the number of banded chicks that were tracked from within one day of hatching to fledging (31 days). Missing years imply insufficient data (fewer than 10 banded chicks)."}
 
 print(fig.surv3)
+```
+
+```{r, echo=F, fig.width=10, fig.height=7, fig.cap="Figure 4. Counts and model estimates (posterior probabilities) of adult birds at four complexes in South San Francisco Bay, CA in 2017. Grey bars denote the frequency of count data and blue lines denote posterior probability distributions of population size estimates from an n mixture model."}
+
+print(fig.n)
 ```
 
 #Works Cited
