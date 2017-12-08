@@ -1,11 +1,11 @@
 ---
 title: "Snowy Plover Analyses 2017"
 author: "Max Tarjan"
-date: "December 8, 2017"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: 
   word_document:
+    reference_docx: "style.docx"
   fig_caption: yes
-  reference_docx: "S:/Science/Waterbird/Program Folders (Gulls, SNPL, ADPP, etc)/Snowy Plovers/Snowy survival project 2017/Snowy_plover_analyses_2017.docx"
 ---
 
 ```{r setup, include=FALSE}
@@ -51,43 +51,50 @@ Average juvenile survival (i.e. the probability of fledging and surviving to fir
 
 The survival curves differ across ponds, with initial drops in survival in the first week at E16B, E6B, and E8, and a more gradual decrease in survival in E14. The initial drop in survival at most ponds may be due to lower effort or detection probability compared to E14. If birds are not tracked closely during the season, all the birds that were never seen again would "die" in the first week according to the model, and all the birds that lived past the season would create a horizontal line in survival, as shown in Figure 1.
 
+Although the difference in the shapes of the survival curves may be due to differences in survey effort or detection, there is some evidence that survivorship may be affected by site or enhancement. For example, E14 shows a change in the shape of the survival curve following oyster shell enhancement (Figure 2). Survival dropped sharply in the first seven days in 2008, but survival remained high in the first week in all years since 2014. We can rule out the effect of sample size by comparing these plots to those for E6B (Figure 3), which has similar sample sizes in some cases but consistently shows a sharp drop in survival in the first week following hatching. These results indicate that the first week of life may be a critical period, following which survival is more likely. Further, enhancement or other habitat differences at E14 seem to buffer chicks against this initial drop in survival, leading to overall higher fleding rates at this site.  Further investigation is required to rule out the role of detection probability differences across ponds in these conclusions.
+
 ##Population size
 The N-mixture model indicated that detection probability for adults was `r round(mean(plogis(coef(fm1, type="det"))),2)`. Hudgens reported that detection probability for SF Bay was 0.65 (Hudgens et al. 2014). Our estimate of detection probability is quite low in comparison, and it was likely underestimated due to movement of adults between sites. If birds move between complexes, there is inflated variability in counts (violating the assumption that all birds counted are within the breeding population for that site). Inflated variablilty leads to underestimates in detection probability and overestimates in population size. This bias is a significant limitation in using N-mixture models with the data that are currently available.
 
-Our knowledge of these sites supports the idea that N-mixture models are greatly overestimating latent population sizes. The left-tailed skew of the posterior probability distribution for Eden Landing (Figure 4) indicates that the latent population size is even greater than the maximum we set for the model (two times the maximum count). Given our great ability to detect birds at this site, we find this estimate to be highly unlikely, and have strong reason to believe that the model is giving inaccurate estimates because one key assumption is violated, namely the assumption that immigration and emigration are negligible. Relaxing that assumption would explain the high variability in our counts across weeks, and would allow the estimate of detection probability to increase with a resultant decrease in estimates of the latent population size. At the moment, we have limited resources that would allow us to estimate immigration/emigration rates between sites. We strongly suggest that an effort is made to track the movements of banded adults. This would allow for these estimates and for a much more accurate depiction of the breeding population size in these critical breeding habitats.
+Our knowledge of these sites supports the idea that N-mixture models are greatly overestimating latent population sizes. The left-tailed skew of the posterior probability distribution for Eden Landing (Figure 4) indicates that the latent population size is even greater than the maximum we set for the model (two times the maximum count). Given our great ability to detect birds at this site, we find this estimate to be highly unlikely, and have strong reason to believe that the model is giving inaccurate estimates because one key assumption is violated, namely the assumption that immigration and emigration are negligible. Relaxing that assumption would explain the high variability in our counts across weeks, and would allow the estimate of detection probability to increase with a resultant decrease in estimates of the latent population size. At the moment, we have limited resources that would allow us to estimate immigration/emigration rates between sites on a weekly timescale. We strongly suggest that an effort is made to band and track the movements adults. This would allow for these estimates and for a much more accurate depiction of the breeding population size in these critical breeding habitats.
 
+######page break
 #Tables and Figures
 Table 1. Sample sizes of banded chicks for each site used to estimate fledging and survival rates.
 ```{r, echo=F}
 knitr::kable(surv.n)
 ```
 
+######page break
 Table 2. Repeated counts of adult Snowy Plovers in Recovery Unit 3 for each week during the 2017 breeding season (May and June).
 ```{r, echo=F}
 knitr::kable(uf.n)
 ```
 
+######page break
 ```{r, echo=F, fig.width=10, fig.height=7, fig.cap="Figure 1. Survival to fledging of snowy plover chicks at closely monitored ponds within the Eden Landing complex in Hayward, CA. Dashed lines denote the 95% CI. n indicates the number of banded chicks that were tracked from within one day of hatching to fledging (31 days)."}
 
 print(fig.surv1)
 ```
 
-
+######page break
 ```{r, echo=F, fig.width=6.5, fig.height=3.75, fig.cap="Figure 2. Survival to fledging of snowy plover chicks at E14 within the Eden Landing complex in Hayward, CA. Dashed lines denote the 95% CI. n indicates the number of banded chicks that were tracked from within one day of hatching to fledging (31 days). Missing years imply insufficient data (fewer than 10 banded chicks)."}
 
 print(fig.surv2)
 ```
 
-
+######page break
 ```{r, echo=F, fig.width=6.5, fig.height=3.75, fig.cap="Figure 3. Survival to fledging of snowy plover chicks at E8 within the Eden Landing complex in Hayward, CA. Dashed lines denote the 95% CI. n indicates the number of banded chicks that were tracked from within one day of hatching to fledging (31 days). Missing years imply insufficient data (fewer than 10 banded chicks)."}
 
 print(fig.surv3)
 ```
 
+######page break
 ```{r, echo=F, fig.width=10, fig.height=7, fig.cap="Figure 4. Counts and model estimates (posterior probabilities) of adult birds at four complexes in South San Francisco Bay, CA in 2017. Grey bars denote the frequency of count data and blue lines denote posterior probability distributions of population size estimates from an N-mixture model. Note the left-tailed skew on the posterior probability distribution for Eden Landing, indicating that the latent population size is larger than the maximum allowed by the model."}
 
 print(fig.n)
 ```
 
+######page break
 #Works Cited
 Hudgens, BH, Eberhart-Phillips L, Stenzel L, Burns C, Colwell M and Page G (2014). Population Viability Analysis of the Western Snowy Plover. Report prepared for the U.S. Fish and Wildlife Service. Arcata, CA.
