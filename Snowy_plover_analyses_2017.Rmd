@@ -28,30 +28,33 @@ We estimated the fledging rate by tracking the survival of chicks banded within 
 We used a survival analysis (survival package in R) to estimate fledging rate and survival over the first 31 days after hatching. We also calculated the juvenile survival rate following the approach by Hudges et al. (2014), with juvenile survival rate defined as the combined probability that an individual both fledged and survived its first winter  (i.e. from hatch date to March 1st of the following year).
 
 ##Breeding adult population size
-We estimated population sizes of breeding adults by applying N-mixture models to repeated counts of untagged adult birds. All adult birds were counted at least once a week at each site during the 2017 breeding season (May and June). We used the maximum count if multiple counts existed in a week for a single pond. We assumed that counts during the peak of the breeding season (May and June) represent breeding individuals and not migrants.  
+We estimated population sizes of breeding adults by applying N-mixture models to repeated counts of untagged adult birds. All adult birds were counted at least once a week at each site during the 2017 breeding season (May and June). We used the maximum count if multiple counts existed in a week for a single pond. We assumed that counts during the peak of the breeding season (May and June) represent breeding individuals and not migrants. Most birds were of unknown sex, so we estimated the population size for both males and females. 
 
-N-mixture models estimate the regional population size from repeated counts at multiple sites. These models assume negligible immigration and emigration between sites. Adult birds move between ponds daily when foraging, so we aggregated counts to the complex level. We collected sufficient repeated counts at four complexes: Eden Landing, Alviso, Ravenswood, and Warm Springs. We assumed that the true population size at any given complex does not exceed two times the maximum count (i.e. the maximum detection probability is at least 0.5). We implemented the analyses using the "unmarked" package in R.  We report estimated population sizes for each complex and discuss the limitations of this method given the available data and the mobility of the species. 
+N-mixture models estimate the regional population size from repeated counts at multiple sites. These models assume negligible immigration and emigration between sites. Adult birds move between ponds daily when foraging, so we aggregated counts to the complex level. We collected sufficient repeated counts at four complexes: Eden Landing, Alviso, Ravenswood, and Warm Springs. We assumed that the true population size at any given complex does not exceed two times the maximum count (i.e. the maximum detection probability is at least 0.5). This assumption corresponds with previous reports that detection probability in San Francisco Bay is 0.65 (Hudgens et al. 2014). We implemented the analyses using the "unmarked" package in R.  We report estimated population sizes for each complex and discuss the limitations of this method given the available data and the mobility of the species. 
 
 
 #Results
 ##Fledging and juvenile survival rates
 
-Across all sites, the fledging rate was `r round(length(which(surv.dat$duration==31))/nrow(surv.dat), 2)` and the juvenile survival rate, or the proportion of chicks that fledged and survived through their first winter to March 1 of the following year, was `r round(ticker/nrow(surv.dat),2)`.
+Across all sites, the fledging rate was `r round(length(which(surv.dat$duration==31))/nrow(surv.dat), 2)` and the juvenile survival rate, or the proportion of chicks that fledged and survived through their first winter to March 1 of the following year, was `r round(ticker/nrow(surv.dat),2)` (Figure 1).
 
-Initial drop in survival at E6B may be due to lower effort or detection probability compared to E14. If birds are not tracked closely during the season, all the birds that were never seen again would "die" in the first week according to the model, and all the birds that lived past the season would create a horizontal line in survival, as shown in Figure 1.
+The survival curves differ across ponds, with initial drops in survival in the first week at E16B, E6B, and E8, and a more gradual decrease in survival in E14. The initial drop in survival at most ponds may be due to lower effort or detection probability compared to E14. If birds are not tracked closely during the season, all the birds that were never seen again would "die" in the first week according to the model, and all the birds that lived past the season would create a horizontal line in survival, as shown in Figure 1.
 
 ##Population size
-The detection probability across all surveys and sites was `r round(mean(plogis(coef(fm1, type="det"))),2)`. Estimated population sizes for `r as.character(y$group)` respectively: `r round(bup(fm1re),0)`. 
+The detection probability across all surveys and sites was `r round(mean(plogis(coef(fm1, type="det"))),2)`. Estimated population sizes for `r as.character(y$group)` were, respectively, `r round(bup(fm1re),0)` adult breeding birds. 
 
 #Discussion
 ##Survival and recruitment
-We report the fledging rate for Snowy Plovers in recovery Unit 3 for the first time. At site that were closely monitored within the Eden Landing complex, the overall fledging rate was `r round(length(which(surv.dat$duration==31))/nrow(surv.dat), 2)` across all years. 
+We report the fledging rate for Snowy Plovers in recovery Unit 3 for the first time. At sites that were closely monitored within the Eden Landing complex, the overall fledging rate was `r round(length(which(surv.dat$duration==31))/nrow(surv.dat), 2)` across all years. 
 
-Average juvenile survival (i.e. the probability of fledging and surviving to first winter) across all sites was `r round(ticker/nrow(surv.dat),2)`, which is very similar to the juvenile survival rate reported by Hudgens et al. (2014) for the south bay: 0.188. 
+Average juvenile survival (i.e. the probability of fledging and surviving to first winter) across all sites was `r round(ticker/nrow(surv.dat),2)`, which is almost identical to the juvenile survival rate reported by Hudgens et al. (2014) for the south bay: 0.188. 
 
-Hudgens also reported that Snowy Plovers produced 1.60 male chicks per male, adult survival was 0.71-0.60, and detection probability for SF Bay was 0.65 (Hudgens et al. 2014).
+The survival curves differ across ponds, with initial drops in survival in the first week at E16B, E6B, and E8, and a more gradual decrease in survival in E14. The initial drop in survival at most ponds may be due to lower effort or detection probability compared to E14. If birds are not tracked closely during the season, all the birds that were never seen again would "die" in the first week according to the model, and all the birds that lived past the season would create a horizontal line in survival, as shown in Figure 1.
 
-If birds move between complexes, this will cause inflated variability in counts (violating the assumption that all birds counted are within the breeding population for that site) and would lead to underestimates in detection probability and overestimates in population size.
+##Population size
+The N-mixture model indicated that detection probability for adults was `r round(mean(plogis(coef(fm1, type="det"))),2)`. Hudgens reported that detection probability for SF Bay was 0.65 (Hudgens et al. 2014). Our estimate of detection probability is quite low in comparison, and it was likely underestimated due to movement of adults between sites. If birds move between complexes, there is inflated variability in counts (violating the assumption that all birds counted are within the breeding population for that site). Inflated variablilty leads to underestimates in detection probability and overestimates in population size. This bias is a significant limitation in using N-mixture models with the data that are currently available.
+
+Our knowledge of these sites supports the idea that N-mixture models are greatly overestimating latent population sizes. The left-tailed skew of the posterior probability distribution for Eden Landing (Figure 4) indicates that the latent population size is even greater than the maximum we set for the model (two times the maximum count). Given our great ability to detect birds at this site, we find this estimate to be highly unlikely, and have strong reason to believe that the model is giving inaccurate estimates because one key assumption is violated, namely the assumption that immigration and emigration are negligible. Relaxing that assumption would explain the high variability in our counts across weeks, and would allow the estimate of detection probability to increase with a resultant decrease in estimates of the latent population size. At the moment, we have limited resources that would allow us to estimate immigration/emigration rates between sites. We strongly suggest that an effort is made to track the movements of banded adults. This would allow for these estimates and for a much more accurate depiction of the breeding population size in these critical breeding habitats.
 
 #Tables and Figures
 Table 1. Sample sizes of banded chicks for each site used to estimate fledging and survival rates.
@@ -81,7 +84,7 @@ print(fig.surv2)
 print(fig.surv3)
 ```
 
-```{r, echo=F, fig.width=10, fig.height=7, fig.cap="Figure 4. Counts and model estimates (posterior probabilities) of adult birds at four complexes in South San Francisco Bay, CA in 2017. Grey bars denote the frequency of count data and blue lines denote posterior probability distributions of population size estimates from an N-mixture model."}
+```{r, echo=F, fig.width=10, fig.height=7, fig.cap="Figure 4. Counts and model estimates (posterior probabilities) of adult birds at four complexes in South San Francisco Bay, CA in 2017. Grey bars denote the frequency of count data and blue lines denote posterior probability distributions of population size estimates from an N-mixture model. Note the left-tailed skew on the posterior probability distribution for Eden Landing, indicating that the latent population size is larger than the maximum allowed by the model."}
 
 print(fig.n)
 ```
