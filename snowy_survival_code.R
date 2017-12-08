@@ -706,16 +706,16 @@ visitMat <- matrix(as.character(1:nVisits), nSites, nVisits, byrow=TRUE)
 
 umf <- unmarkedFramePCount(y=y, siteCovs=data.frame(x=x),obsCovs=list(visit=visitMat))
 
-summary(umf)
+#summary(umf)
 # Fit a model
-fm1 <- pcount(~visit-1 ~ x, umf, K=50)
-fm1
-plogis(coef(fm1, type="det")) # Should be close to p
+#fm1 <- pcount(~visit-1 ~ x, umf, K=50)
+#fm1
+#plogis(coef(fm1, type="det")) # Should be close to p
 # Empirical Bayes estimation of random effects
-(fm1re <- ranef(fm1))
-plot(fm1re, subset=site %in% 1:25, xlim=c(-1,40))
-sum(bup(fm1re)) # Estimated population size
-sum(N) # Actual population size
+#(fm1re <- ranef(fm1))
+#plot(fm1re, subset=site %in% 1:25, xlim=c(-1,40))
+#sum(bup(fm1re)) # Estimated population size
+#sum(N) # Actual population size
 
 # Real data
 #data(mallard)
@@ -728,33 +728,42 @@ dat.test<-subset(uf.dat.sum, year==2017 & group %in% c("Alviso", "Eden Landing",
 y <- subset(spread(data = dat.test, key = survey, value=n),select= -c(year, perfect_survey, R))
 visitMat.test <- matrix(as.character(1:(ncol(y)-1)), nrow(y), ncol(y)-1, byrow=TRUE)
 umf.test <- unmarkedFramePCount(y = subset(y, select=-group), siteCovs = data.frame(site=factor(y$group)), obsCovs = list(visit=visitMat.test))
-summary(umf.test)
-fm1 <- pcount(~visit-1 ~ site, mixture= "NB", umf.test, K=max(dat.test$n)*20)
+#summary(umf.test)
+fm1 <- pcount(~visit-1 ~ site, mixture= "NB", umf.test, K=max(dat.test$n)*2)
 fm1
 plogis(coef(fm1, type="det")) # Should be close to p
 # Empirical Bayes estimation of random effects
-(fm1re <- ranef(fm1)); as.character(y$group)
-plot(fm1re)
-sum(bup(fm1re)) # Estimated population size
+fm1re <- ranef(fm1); as.character(y$group)
+#plot(fm1re)
+#sum(bup(fm1re)) # Estimated population size
 
 ##get posterior probabilities
 est<-fm1re@post[,,1]
-est<-data.frame(val=colnames(est), x.1=est[1,], x.2=est[2,], x.3=est[3,], x.4=est[4,])
-est<-gather(data = est, key = site, value = prob, 2:5)
+est<-data.frame(val=as.numeric(colnames(est)), x.1=est[1,], x.2=est[2,], x.3=est[3,], x.4=est[4,])
+colnames(est)<-c("val", unique(as.character(dat.test$group)))
+est<-gather(data = est, key = group, value = prob, 2:5)
 head(est)
+#est<-subset(est, prob>0)
 
-fig.test <- ggplot(data = est, aes(x = val, y = prob))
-fig.test <- fig.test + geom_bar(stat="identity")
-fig.test <- fig.test + facet_wrap(~site)
-fig.test
+##plot of posterior probabilities
+#fig.test <- ggplot(data = est, aes(x = val, y = prob))
+#fig.test <- fig.test + geom_bar(stat="identity")
+#fig.test <- fig.test + facet_wrap(~site)
+#fig.test
 
 fig.n <- ggplot(dat.test, aes(x = n))
-fig.n <- fig.n + geom_histogram(binwidth = 5)
-fig.n <- fig.n + facet_wrap(~group)
+fig.n <- fig.n + geom_histogram(binwidth = 10)
 fig.n <- fig.n + theme_bw() 
-fig.n <- fig.n + xlab("Counts of adult birds") + ylab("Frequency") 
+fig.n <- fig.n + xlab("Number of adult birds") + ylab("Frequency") 
 fig.n <- fig.n + theme(axis.line.x=element_line(), axis.line.y=element_line(), axis.title.y = element_text(margin = margin(r=1, unit="line")),  panel.grid = element_blank(), panel.spacing = unit(1, "lines"))
-fig.n <- fig.n + scale_x_continuous(expand=c(0,0), breaks = seq(0,150,25))
-fig.n <- fig.n + scale_y_continuous(expand = c(0,0))
 fig.n <- fig.n + theme(text = element_text(size=20))
+#fig.n <- fig.n + geom_bar(stat="identity", data = est, aes(x=val, y = prob*100), fill="blue")
+fig.n <- fig.n + geom_line(data = est, aes(x=val, y = prob*10), color="blue", size=1.5)
+fig.n <- fig.n + facet_wrap(~group, scales="free")
+#fig.n <- fig.n + scale_x_continuous(expand=c(0,0), breaks = seq(0,150,25))
+#fig.n <- fig.n + scale_y_continuous(expand = c(0,0), sec.axis = sec_axis(~./100, name = ""))
+fig.n <- fig.n + scale_y_continuous(expand = c(0,0))
 fig.n
+
+##table for unknown fate data
+uf.n<-y
