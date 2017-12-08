@@ -139,7 +139,7 @@ for (j in 1:length(unique(kf.dat$id))) { ##for each bird
 
 #write.csv(subset(kf.dat, Type=="missing"), "presumed_dead.csv", row.names=F)
 
-##NEED TO ASSIGN LOCATION WHERE BIRD FIRST APPEARED?? OTHERWISE AN INDIVIDUAL WILL BE ANALYZED IN TWO DIFFERENT GROUPS
+##NEED TO ASSIGN LOCATION WHERE BIRD FIRST APPEARED
 ##their group is their first CAPTURE location
 kf.dat$group<-rep(NA, nrow(kf.dat))
 for (j in 1:length(unique(kf.dat$id))) {
@@ -242,7 +242,7 @@ uf.dat$wday<-as.numeric(wday(uf.dat$Date))
 #uf.dat$wday<-wday(uf.dat$Date, label=T)
 #uf.dat<-subset(uf.dat, month %in% c(5,6) & PondNumber %in% read.csv("Ponds Surveyed Weekly.csv", header=F)[,1] & year>=2004) ##use data in May and June from ponds that are surveyed weekly; also choose years when groups were tracked closely
 
-dat.sub<-subset(uf.dat, year==3000)
+dat.sub<-subset(uf.dat, year==3000) ##create empty dataframe with same columns
 for (j in 2004:2017) {
   ##find the first monday in May
   year.temp<-j
@@ -262,7 +262,7 @@ for (j in 2004:2017) {
 
 uf.dat<-dat.sub
 
-##FIGURE OUT WHAT LOCATIONS WE SHOULD MAKE THE "GROUP" VARIABLE
+##DESIGNATE THE "GROUP" VARIABLE
 uf.dat$group<-uf.dat$complex
 
 ##use Ben's groups
@@ -339,7 +339,7 @@ uf.dat.sum<-uf.dat.sum[order(uf.dat.sum$group, uf.dat.sum$survey),]; head(uf.dat
 
 ##OVERWRITE WITH SEQUENTIAL SURVEY NUMBER; requires that the data are ordered by group and then by date
 ##ADD SURVEY NUMBER
-##rename survey to be all 1, since we will represent each yearly count during the window survye as the one and only survey
+
 uf.dat.sum$survey<-rep(1, nrow(uf.dat.sum))
 
 for (j in 1:nrow(uf.dat.sum)) {
@@ -353,26 +353,26 @@ dnm_data<-uf.dat.sum
 kf_data<-kf.dat
 
 ##visualize the data
-vis <- ggplot(data = dnm_data, aes(x = year, y = n))
-vis <- vis + geom_point()
-vis <- vis + facet_grid(facets = dnm_data$group~., scales = "free_y")
-vis
+#vis <- ggplot(data = dnm_data, aes(x = year, y = n))
+#vis <- vis + geom_point()
+#vis <- vis + facet_grid(facets = dnm_data$group~., scales = "free_y")
+#vis
 
 ##plot of counts across years for particular ponds
-j<-0
-j<-j+1
-fig <- ggplot(data = subset(dnm_data, group == unique(dnm_data$group)[j]), aes(x = survey, y = n))
-fig <- fig + geom_point()
-fig <- fig + facet_wrap(~year, scales = "free_x")
-fig <- fig + xlab(label = str_c(unique(dnm_data$group)[j], " survey number"))
-fig
+#j<-0
+#j<-j+1
+#fig <- ggplot(data = subset(dnm_data, group == unique(dnm_data$group)[j]), aes(x = survey, y = n))
+#fig <- fig + geom_point()
+#fig <- fig + facet_wrap(~year, scales = "free_x")
+#fig <- fig + xlab(label = str_c(unique(dnm_data$group)[j], " survey number"))
+#fig
 
 ##visual data for known-fate birds
-j<-0
-j<-j+1
-fplot <- ggplot(data = subset(kf_data, subset = id == unique(kf_data$id)[j]), aes(x = Date, y = CH))
-fplot <- fplot + geom_point()
-fplot
+#j<-0
+#j<-j+1
+#fplot <- ggplot(data = subset(kf_data, subset = id == unique(kf_data$id)[j]), aes(x = Date, y = CH))
+#fplot <- fplot + geom_point()
+#fplot
 
 ###
 ### Create list of fixed parameters

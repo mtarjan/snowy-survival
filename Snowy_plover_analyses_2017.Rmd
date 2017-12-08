@@ -1,7 +1,7 @@
 ---
 title: "Snowy Plover Analyses 2017"
 author: "Max Tarjan"
-date: "December 7, 2017"
+date: "December 8, 2017"
 output: 
   word_document:
   fig_caption: yes
@@ -19,19 +19,18 @@ source("snowy_survival_code.R")
 
 #Draft Report prepared for the Bay Delta USFWS
 #Introduction
+This report provides analyses of fledging success and the adult breeding population size for Western Snowy Plovers in Recovery Unit 3 during the 2017 breeding season.
 
 #Methods
 ##Fledging and juvenile survival rates
-We estimated the fledging rate by tracking the survival of chicks banded within two days after hatching. We restricted our analysis to chicks at sites that were visited at least once a week. These sites were monitored closely, so chicks that went missing before fledging (31 days) were presumed dead. We assumed that their death date fell within a week of the last date they were observed. We randomly selected the exact date within the week following their last observation. Birds that were observed in subsequent years as adults were marked as fledged. The rate of observing adult birds that went missing as chicks is low (INSERT RATE), so we presume that the underestimate in fledge rate caused by detection rate is relatively low.
+We estimated the fledging rate by tracking the survival of chicks banded within two days after hatching. We restricted our analysis to chicks at sites that were visited at least once a week. These sites were monitored closely, so chicks that went missing before fledging (31 days) were presumed dead. We assumed that their death date fell within a week of the last date they were observed, and we randomly selected the exact day during the 7-day period following their last observation. This assumption may lead to an underestimate in fledging success if the detection rate is sufficiently low. 
 
-We used a survival analysis (survival package in R) to estimate fledging rate and survival over the first 31 days after hatching. Hudgens et al. calculated the juvenile survival rate as the combined probability that an individual both fledged and survived its first winter  (i.e. from hatch date to March 1st of the following year).
+We used a survival analysis (survival package in R) to estimate fledging rate and survival over the first 31 days after hatching. We also calculated the juvenile survival rate following the approach by Hudges et al. (2014), with juvenile survival rate defined as the combined probability that an individual both fledged and survived its first winter  (i.e. from hatch date to March 1st of the following year).
 
-##Population growth
-We estimated population sizes of breeding adults and detection probabilities using n mixture models and counts of untagged adult birds. All adult birds were counted at least once a week at each site. We used the maximum count if multiple counts existed in a week. Counts occurred during the breeding season (May to June), and we assumed that counts represent breeding individuals and not migrants.  
+##Breeding adult population size
+We estimated population sizes of breeding adults by applying N-mixture models to repeated counts of untagged adult birds. All adult birds were counted at least once a week at each site during the 2017 breeding season (May and June). We used the maximum count if multiple counts existed in a week for a single pond. We assumed that counts during the peak of the breeding season (May and June) represent breeding individuals and not migrants.  
 
-Adult birds move between sites daily when foraging, so we estimated population size at the complex level. If birds move between complexes, this will cause inflated variability in counts (violating the assumption that all birds counted are within the breeding population for that site) and would lead to underestimates in detection probability and overestimates in population size.
-
-N-mixture models estimate the population size as a whole for birds that have been counted at multiple sites. We determined that the population was at the complex level, and that the ponds would serve as sites.
+N-mixture models estimate the regional population size from repeated counts at multiple sites. These models assume negligible immigration and emigration between sites. Adult birds move between ponds daily when foraging, so we aggregated counts to the complex level. We collected sufficient repeated counts at four complexes: Eden Landing, Alviso, Ravenswood, and Warm Springs. We assumed that the true population size at any given complex does not exceed two times the maximum count (i.e. the maximum detection probability is at least 0.5). We implemented the analyses using the "unmarked" package in R.  We report estimated population sizes for each complex and discuss the limitations of this method given the available data and the mobility of the species. 
 
 
 #Results
@@ -52,13 +51,15 @@ Average juvenile survival (i.e. the probability of fledging and surviving to fir
 
 Hudgens also reported that Snowy Plovers produced 1.60 male chicks per male, adult survival was 0.71-0.60, and detection probability for SF Bay was 0.65 (Hudgens et al. 2014).
 
+If birds move between complexes, this will cause inflated variability in counts (violating the assumption that all birds counted are within the breeding population for that site) and would lead to underestimates in detection probability and overestimates in population size.
+
 #Tables and Figures
 Table 1. Sample sizes of banded chicks for each site used to estimate fledging and survival rates.
 ```{r, echo=F}
 knitr::kable(surv.n)
 ```
 
-Table 2. Count data for adult Snowy Plovers in Recovery Unit 3 for each survey in 2017.
+Table 2. Repeated counts of adult Snowy Plovers in Recovery Unit 3 for each week during the 2017 breeding season (May and June).
 ```{r, echo=F}
 knitr::kable(uf.n)
 ```
@@ -80,7 +81,7 @@ print(fig.surv2)
 print(fig.surv3)
 ```
 
-```{r, echo=F, fig.width=10, fig.height=7, fig.cap="Figure 4. Counts and model estimates (posterior probabilities) of adult birds at four complexes in South San Francisco Bay, CA in 2017. Grey bars denote the frequency of count data and blue lines denote posterior probability distributions of population size estimates from an n mixture model."}
+```{r, echo=F, fig.width=10, fig.height=7, fig.cap="Figure 4. Counts and model estimates (posterior probabilities) of adult birds at four complexes in South San Francisco Bay, CA in 2017. Grey bars denote the frequency of count data and blue lines denote posterior probability distributions of population size estimates from an N-mixture model."}
 
 print(fig.n)
 ```
