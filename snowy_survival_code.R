@@ -282,7 +282,10 @@ uf.dat$group<-uf.dat$complex
 ## ADD SURVEYS BASED ON 2-WEEK INTERVALS ##
 #uf.dat$survey<-ifelse(chron::days(uf.dat$Date)< 16, str_c(uf.dat$year,".", uf.dat$month, ".1"), str_c(uf.dat$year,".", uf.dat$month, ".2"))
 
-uf.dat$survey<-str_c(uf.dat$year, ".", uf.dat$week)
+#uf.dat$survey<-str_c(uf.dat$year, ".", uf.dat$week)
+
+##survey is first day in the survey week
+uf.dat$survey<-as.Date(x = str_c(uf.dat$year, "-01-01")) + uf.dat$week*7-7
 
 ##ALTERNATIVE TO GROUP BY WEEK
 uf.dat.wk<-dim(0)
@@ -336,6 +339,8 @@ uf.dat.sum<-uf.dat.wk
 
 ##order by group, then time
 uf.dat.sum<-uf.dat.sum[order(uf.dat.sum$group, uf.dat.sum$survey),]; head(uf.dat.sum)
+
+uf.dat.sum$survey.wk.date<-uf.dat.sum$survey
 
 ##OVERWRITE WITH SEQUENTIAL SURVEY NUMBER; requires that the data are ordered by group and then by date
 ##ADD SURVEY NUMBER
@@ -490,7 +495,7 @@ for (j in 1:length(unique(surv.dat$pond))) {
   #mtext(text = str_c("Prop survive to day ", last(surv.fitted.default$time)," is ", round(last(surv.fitted.default$surv),2), " (", round(last(surv.fitted.default$upper),2), ", ", round(last(surv.fitted.default$lower),2),")"), side=3)
   n.dead<-rep(length(which(dat.temp$fate==1)),length(surv.fitted.default$time))
   n.alive<-rep(length(which(dat.temp$fate==0)),length(surv.fitted.default$time))
-  surv.list<-rbind(surv.list,(data.frame(pond=rep(pond.temp, length(surv.fitted.default$time)), year=rep("total", length(surv.fitted.default$time)), time=surv.fitted.default$time, surv=surv.fitted.default$surv, upper=surv.fitted.default$upper, lower=surv.fitted.default$lower, n.alive=n.alive, n.dead=n.dead)))
+  surv.list<-rbind(surv.list,(data.frame(pond=rep(pond.temp, length(surv.fitted.default$time)), year=rep("total", length(surv.fitted.default$time)), time=surv.fitted.default$time, surv=surv.fitted.default$surv, upper=surv.fitted.default$upper, lower=surv.fitted.default$lower, n.alive=n.alive, n.dead=n.dead, f=round(last(surv.fitted.default$surv),2))))
   for (i in 1:length(unique(dat.temp$year))) {
     year.temp<-unique(dat.temp$year)[i]
     dat.year.temp<-subset(dat.temp, year==year.temp)
@@ -502,7 +507,7 @@ for (j in 1:length(unique(surv.dat$pond))) {
     n.dead<-rep(length(which(dat.year.temp$fate==1)),length(surv.fitted.default$time))
     n.alive<-rep(length(which(dat.year.temp$fate==0)),length(surv.fitted.default$time))
     
-    surv.list<-rbind(surv.list,(data.frame(pond=rep(pond.temp, length(surv.fitted.default$time)), year=rep(as.character(year.temp), length(surv.fitted.default$time)), time=surv.fitted.default$time, surv=surv.fitted.default$surv, upper=surv.fitted.default$upper, lower=surv.fitted.default$lower, n.alive=n.alive, n.dead=n.dead)))
+    surv.list<-rbind(surv.list,(data.frame(pond=rep(pond.temp, length(surv.fitted.default$time)), year=rep(as.character(year.temp), length(surv.fitted.default$time)), time=surv.fitted.default$time, surv=surv.fitted.default$surv, upper=surv.fitted.default$upper, lower=surv.fitted.default$lower, n.alive=n.alive, n.dead=n.dead, f=round(last(surv.fitted.default$surv),2))))
     
   }
 }
@@ -522,36 +527,37 @@ fig.surv1 <- fig.surv1 + xlab("Days post-banding") + ylab("Proportion chicks sur
 fig.surv1 <- fig.surv1 + theme(axis.line.x=element_line(), axis.line.y=element_line(), axis.title.y = element_text(margin = margin(r=1, unit="line")), panel.grid = element_blank(), panel.spacing = unit(1.25, "lines"))
 fig.surv1 <- fig.surv1 + scale_x_continuous(expand=c(0,0), breaks = seq(0, 32, 5))
 fig.surv1 <- fig.surv1 + scale_y_continuous(expand=c(0,0), breaks = seq(0.0, 1.0, 0.2), limits = c(0,1))
-fig.surv1 <- fig.surv1 + geom_text(aes(x = 5.5, y = 0.1, label=n.alive+n.dead)) + geom_text(aes(x = 3.5, y = 0.1, label="n = "))
-fig.surv1 <- fig.surv1 + theme(text = element_text(size=20))
+fig.surv1 <- fig.surv1 + geom_text(aes(x=8, y=0.1, label=str_c("n = ", n.alive+n.dead, "; f = ", f)))
+fig.surv1 <- fig.surv1 + theme(text = element_text(size=16))
 fig.surv1
 
 ##E14 PLOT
 fig.surv2 <- ggplot(data = subset(surv.list, pond=="E14" & year!="total"), aes(x=time, y=surv))
 fig.surv2 <- fig.surv2 + geom_step()
-fig.surv2 <- fig.surv2 + facet_wrap(~year, strip.position ="top")
+fig.surv2 <- fig.surv2 + facet_wrap(~year,strip.position ="top", ncol = 2)
 fig.surv2 <- fig.surv2 + geom_step(aes(x = time, y = upper), linetype="dashed") + geom_step(aes(x = time, y = lower), linetype="dashed")
 fig.surv2 <- fig.surv2 + theme_bw() 
 fig.surv2 <- fig.surv2 + xlab("Days post-banding") + ylab("Proportion chicks surviving") 
 fig.surv2 <- fig.surv2 + theme(axis.line.x=element_line(), axis.line.y=element_line(), axis.title.y = element_text(margin = margin(r=1, unit="line")), panel.grid = element_blank(), panel.spacing = unit(1, "lines"))
 fig.surv2 <- fig.surv2 + scale_x_continuous(expand=c(0,0), breaks = seq(0, 32, 5))
 fig.surv2 <- fig.surv2 + scale_y_continuous(expand=c(0,0), breaks = seq(0.0, 1.0, 0.2), limits = c(0,1))
-fig.surv2 <- fig.surv2 + geom_text(aes(x = 6.75, y = 0.1, label=n.alive+n.dead)) + geom_text(aes(x = 4, y = 0.1, label="n = "))
-fig.surv2 <- fig.surv2 + theme(text = element_text(size=14))
+fig.surv2 <- fig.surv2 + geom_text(aes(x=8, y=0.1, label=str_c("n = ", n.alive+n.dead, "; f = ", f)))
+fig.surv2 <- fig.surv2 + theme(text = element_text(size=16))
+#fig.surv2 <- fig.surv2 + annotate("rect", xmin = 2, xmax = 18, ymin = .05, ymax = .15, alpha = .5, color="white")
 fig.surv2
 
 ##E8 PLOT
 fig.surv3 <- ggplot(data = subset(surv.list, pond=="E8" & year!="total"), aes(x=time, y=surv))
 fig.surv3 <- fig.surv3 + geom_step()
-fig.surv3 <- fig.surv3 + facet_wrap(~year, strip.position ="top")
+fig.surv3 <- fig.surv3 + facet_wrap(~year, strip.position ="top", ncol=2)
 fig.surv3 <- fig.surv3 + geom_step(aes(x = time, y = upper), linetype="dashed") + geom_step(aes(x = time, y = lower), linetype="dashed")
 fig.surv3 <- fig.surv3 + theme_bw() 
 fig.surv3 <- fig.surv3 + xlab("Days post-banding") + ylab("Proportion chicks surviving") 
 fig.surv3 <- fig.surv3 + theme(axis.line.x=element_line(), axis.line.y=element_line(), axis.title.y = element_text(margin = margin(r=1, unit="line")),  panel.grid = element_blank(), panel.spacing = unit(1, "lines"))
 fig.surv3 <- fig.surv3 + scale_x_continuous(expand=c(0,0), breaks = seq(0, 32, 5))
 fig.surv3 <- fig.surv3 + scale_y_continuous(expand=c(0,0), breaks = seq(0.0, 1.0, 0.2), limits = c(0,1))
-fig.surv3 <- fig.surv3 + geom_text(aes(x = 6.75, y = 0.1, label=n.alive+n.dead)) + geom_text(aes(x = 4, y = 0.1, label="n = "))
-fig.surv3 <- fig.surv3 + theme(text = element_text(size=14))
+fig.surv3 <- fig.surv3 + geom_text(aes(x=8, y=0.1, label=str_c("n = ", n.alive+n.dead, "; f = ", f)))
+fig.surv3 <- fig.surv3 + theme(text = element_text(size=16))
 fig.surv3
 
 ##can compare survival curves across sites and years: https://rpubs.com/brouwern/MotulskyCh5
@@ -724,7 +730,7 @@ umf <- unmarkedFramePCount(y=y, siteCovs=data.frame(x=x),obsCovs=list(visit=visi
 #(fm.mallard.nb <- pcount(~ date + I(date^2) ~ length + elev, mixture = "NB", mallardUMF, K=30))
 
 ##SNOWY PLOVER DATA
-dat.test<-subset(uf.dat.sum, year==2017 & group %in% c("Alviso", "Eden Landing", "Ravenswood", "Warm Springs") & survey <10, select=-month)
+dat.test<-subset(uf.dat.sum, year==2017 & group %in% c("Alviso", "Eden Landing", "Ravenswood", "Warm Springs") & survey <10, select=-c(month, survey.wk.date))
 y <- subset(spread(data = dat.test, key = survey, value=n),select= -c(year, perfect_survey, R))
 visitMat.test <- matrix(as.character(1:(ncol(y)-1)), nrow(y), ncol(y)-1, byrow=TRUE)
 umf.test <- unmarkedFramePCount(y = subset(y, select=-group), siteCovs = data.frame(site=factor(y$group)), obsCovs = list(visit=visitMat.test))
@@ -766,4 +772,5 @@ fig.n <- fig.n + scale_y_continuous(expand = c(0,0))
 fig.n
 
 ##table for unknown fate data
-uf.n<-y
+uf.n<-spread(data = unique(subset(uf.dat.sum, select=c(survey.wk.date,n, group), subset= year==2017 & group %in% c("Alviso", "Eden Landing", "Ravenswood", "Warm Springs"))), key = group, value = n)
+colnames(uf.n)[1]<-"Survey week"
