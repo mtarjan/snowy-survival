@@ -94,7 +94,7 @@ kf.dat3<-dplyr::left_join(x=kf.dat2, y=subset(parent.locs, select=c(id, year, Lo
 kf.dat2$Location[which(is.na(kf.dat2$Location))]<-kf.dat3$Location.y[which(is.na(kf.dat2$Location))] ##for NA locations in original dataset, replace them with parent locations in kf.dat3
 
 ##missing locations provided by Ben
-mlocs<-read.csv("birds without ponds.csv")
+mlocs<-read.csv("data/birds without ponds.csv")
 mlocs$Location<-mlocs$Pond.Association
 mlocs<-subset(mlocs, select=c(id, Age, Sex, Date, year, Location, Type, CH))
 mlocs<-mlocs[complete.cases(mlocs),]
@@ -109,13 +109,13 @@ kf.dat<-unique(rbind(kf.dat2, kf.dat1))
 
 
 ##add pond group to locations
-pond.groups<-read.csv("pond names.csv")
+pond.groups<-read.csv("data/pond names.csv")
 kf.dat<-dplyr::left_join(x=kf.dat, y=subset(pond.groups, select=c(Pond, Pond.Group)), by = c("Location" = "Pond"))
 
 
 ##ADD CHICKS PRESUMED DEAD ###
 ##change to add assumption that any chick not seen alive is dead by fledging. but when do we assume they died? randomly assign them a time that is within the distribution of deaths for known-dead individuals. or is it a better assumption that they were dead the day after they were last observed?? that's maybe a better assumption. one week after they were last observed
-broods<-read.csv("Brood Groups.csv")
+broods<-read.csv("data/Brood Groups.csv")
 broods<-broods[,1:3]
 
 ##add brood to kf.dat
@@ -137,7 +137,7 @@ for (j in 1:length(unique(kf.dat$id))) { ##for each bird
   kf.dat<-rbind(kf.dat, data.frame(id=dat.temp$id[1], Age = dat.temp$Age[1], Sex= dat.temp$Sex[1], Date=brood.resight, year=format(brood.resight, format="%Y"), Location="", Type="missing", CH=0, Pond.Group = "", Nest.Group=dat.temp$Nest.Group[1]))
 }
 
-#write.csv(subset(kf.dat, Type=="missing"), "presumed_dead.csv", row.names=F)
+#write.csv(subset(kf.dat, Type=="missing"), "data/presumed_dead.csv", row.names=F)
 
 ##NEED TO ASSIGN LOCATION WHERE BIRD FIRST APPEARED
 ##their group is their first CAPTURE location
@@ -197,7 +197,7 @@ uf.dat<-subset(uf.dat, select=-c(adults,AgeSexStatus, adults2))
 uf.dat<-subset(uf.dat, year > 1980 & year < 2018)
 
 ##restrict surveys to "window surveys" when only reproductive individuals are present (ie exclude counts of migratory birds)
-#window.dates<-read.csv("SNPL Breeding Window Dates.csv")
+#window.dates<-read.csv("data/SNPL Breeding Window Dates.csv")
 #window.dates$start.date<-as.Date(window.dates$start.date, "%m/%d/%Y")
 #window.dates$end.date<-as.Date(window.dates$end.date, "%m/%d/%Y")
 
@@ -240,7 +240,7 @@ uf.dat$month<-as.numeric(format(uf.dat$Date, "%m"))
 uf.dat$week<-as.numeric(week(uf.dat$Date))
 uf.dat$wday<-as.numeric(wday(uf.dat$Date))
 #uf.dat$wday<-wday(uf.dat$Date, label=T)
-#uf.dat<-subset(uf.dat, month %in% c(5,6) & PondNumber %in% read.csv("Ponds Surveyed Weekly.csv", header=F)[,1] & year>=2004) ##use data in May and June from ponds that are surveyed weekly; also choose years when groups were tracked closely
+#uf.dat<-subset(uf.dat, month %in% c(5,6) & PondNumber %in% read.csv("data/Ponds Surveyed Weekly.csv", header=F)[,1] & year>=2004) ##use data in May and June from ponds that are surveyed weekly; also choose years when groups were tracked closely
 
 dat.sub<-subset(uf.dat, year==3000) ##create empty dataframe with same columns
 for (j in 2004:2017) {
