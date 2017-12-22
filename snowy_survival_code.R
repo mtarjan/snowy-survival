@@ -9,7 +9,7 @@
 
 ##Please download and install Rtools 3.4 from http://cran.r-project.org/bin/windows/Rtools/
 #devtools::install_github('kfdnm','NMML')
-library(kfdnm)
+#library(kfdnm)
 
 library(dplyr) ##required for groupby
 
@@ -33,10 +33,10 @@ library(lubridate)
 # survival_kf Survival rate for KF individuals.
 # perfect_survey_rate The probability that all non-kf individuals are observed in a survey.
 # detection The detection probability for abundance surveys.
-sim.dat<-sim_data(num_kf = 10, num_years = 5, num_surveys = 7, recruit_rate = 5, init_rate = 15, survival_dnm = .70, survival_kf = .70, perfect_survey_rate = .3, detection = .65)
+#sim.dat<-sim_data(num_kf = 10, num_years = 5, num_surveys = 7, recruit_rate = 5, init_rate = 15, survival_dnm = .70, survival_kf = .70, perfect_survey_rate = .3, detection = .65)
 
-kf_data<-sim.dat$kf_data
-dnm_data<-sim.dat$dnm_data
+#kf_data<-sim.dat$kf_data
+#dnm_data<-sim.dat$dnm_data
 
 ##LOAD SNPL DATA
 ##rows must be first ordered by group, then time within group
